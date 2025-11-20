@@ -62,9 +62,9 @@ ul {
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    gap: 5rem;
+    gap: 6rem;
     width: 100%;
-    margin-top: 1rem;
+    margin-top: 2rem;
 }
 
 /* ------------------ SUMMARY PANEL ------------------ */
@@ -76,7 +76,7 @@ ul {
     text-align: center;
     box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
     min-height: 160px;
-    width: 70%;
+    width: 80%;
     margin: 0 auto;
     transition: opacity 0.3s ease;
     font-size: 1.1rem;
@@ -92,9 +92,10 @@ ul {
 
 #chart svg,
 #radar-chart svg {
-    width: 450px !important;
+    width: 32vw;                 /* 缩小比例但保持水平排版 */
+    max-width: 520px;            /* 不要无限变小 */
     height: auto;
-    margin: 0 auto;
+    display: inline-block;
 }
 
 /* ------------------ RADAR STYLING ------------------ */
@@ -152,4 +153,6 @@ ul {
 
 #compare-line svg {
     margin-top: 30px;
+    width: 80%;
+    max-width: 900px;
 }
