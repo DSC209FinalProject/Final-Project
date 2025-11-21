@@ -4,7 +4,6 @@ let allSongs = [];
 let compareMode = false;
 let selectedMonths = [];
 
-/* ------------------------------- LOAD DATA ------------------------------ */
 
 async function loadData() {
     const dataset = await d3.csv("./data/spotify-2023.csv", d => ({
@@ -33,7 +32,7 @@ function countSongs(data) {
     }));
 }
 
-/* ---------------------------- COMPUTE STATS ----------------------------- */
+//metric computation
 
 function computeStats(songs) {
     return {
@@ -47,17 +46,19 @@ function computeStats(songs) {
     };
 }
 
-/* ---------------------------- PIE CHART ---------------------------- */
+//pie chart
 
 function renderGraph(data) {
-    const width = 1000, height = 1000;
+    const width = 900, height = 900;
+
     const svg = d3.select('#chart')
         .append('svg')
         .attr('viewBox', `-150 -150 ${width + 300} ${height + 300}`)
-        .style('width', '100%');
+        .style('width', '100%')
+        .style('max-width', '600px');
 
     const container = svg.append('g')
-        .attr('transform', `translate(${width / 2}, ${height / 2})`);
+        .attr('transform', `translate(${width/2}, ${height/2})`);
 
     const pie = d3.pie().value(d => d.count);
     const slices = pie(data);
@@ -72,16 +73,29 @@ function renderGraph(data) {
         .append("path")
         .attr("d", arc)
         .attr("fill", (d, i) => color[i])
-        .attr("stroke", "black")
+        .attr("stroke", "#1a1a1a")
         .attr("stroke-width", 2)
         .style("cursor", "pointer")
+
+//back hover interaction
+        .on("mouseover", function(event, d) {
+            const [x, y] = arc.centroid(d);
+            d3.select(this)
+                .transition()
+                .duration(150)
+                .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
+        })
+        .on("mouseout", function() {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr("transform", "translate(0,0)");
+        })
+
         .on("click", (event, d) => handleMonthClick(d.data.month));
 
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-    const labelArc = d3.arc()
-        .innerRadius(radius * 0.93)
-        .outerRadius(radius * 1.12);
+    const labelArc = d3.arc().innerRadius(radius * 0.93).outerRadius(radius * 1.12);
 
     container.selectAll(".pie-label")
         .data(slices)
@@ -90,14 +104,13 @@ function renderGraph(data) {
         .attr("class", "pie-label")
         .attr("transform", d => `translate(${labelArc.centroid(d)})`)
         .attr("text-anchor", "middle")
-        .attr("dy", "0.35em")
-        .style("font-size", "3rem")
-        .style("fill", "#f5f5f7")
+        .style("font-size", "1.2rem")
+        .style("fill", "#ffffff")
         .style("font-weight", "600")
         .text(d => monthNames[d.data.month - 1]);
 }
 
-/* ---------------------- CLICK LOGIC (COMPARISON MODE) ---------------------- */
+//click logic
 
 function handleMonthClick(month) {
     if (!compareMode) {
@@ -120,7 +133,7 @@ function handleMonthClick(month) {
     }
 }
 
-/* ------------------------- COMPARE MONTHS -------------------------- */
+//compare month
 
 function updateComparisonCharts(monthA, monthB) {
     const songsA = allSongs.filter(d => d.released_month === monthA);
@@ -133,20 +146,16 @@ function updateComparisonCharts(monthA, monthB) {
         .attr("class", "compare-shape")
         .attr("d", radarPath(statsA))
         .attr("fill", "rgba(255, 145, 164, 0.4)")
-        .attr("stroke", "#ff6384")
-        .attr("stroke-width", 2);
+        .attr("stroke", "#ff6384");
 
     radarGroup.append("path")
         .attr("class", "compare-shape")
         .attr("d", radarPath(statsB))
         .attr("fill", "rgba(79, 140, 255, 0.4)")
-        .attr("stroke", "#4f8cff")
-        .attr("stroke-width", 2);
-
-    renderLineComparison(monthA, monthB);
+        .attr("stroke", "#4f8cff");
 }
 
-/* ---------------------------- SUMMARY PANEL ---------------------------- */
+//summary panel
 
 function updateMonthOverview(selectedMonth) {
     const container = d3.select("#month-summary");
@@ -170,41 +179,43 @@ function updateMonthOverview(selectedMonth) {
     `);
 }
 
-/* ---------------------------- RADAR CHART ---------------------------- */
+//radar chart
 
 let radarSvg, radarGroup;
 const radarSize = 400, radarRadius = 160;
 
 function initRadarChart() {
+    const width = 450;
+    const height = 450;
+    const radius = 160;
+
     radarSvg = d3.select("#radar-chart")
         .append("svg")
-        .attr("width", radarSize)
-        .attr("height", radarSize);
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("max-width", "450px");
 
     radarGroup = radarSvg.append("g")
-        .attr("transform", `translate(${radarSize/2}, ${radarSize/2})`);
+        .attr("transform", `translate(${width/2}, ${height/2})`);
 
     const levels = [25, 50, 75, 100];
     levels.forEach(level => {
         radarGroup.append("circle")
-            .attr("r", radarRadius * (level / 100))
-            .attr("fill", "none")
-            .attr("stroke", "#444")
-            .attr("stroke-width", 0.7);
+            .attr("class", "radar-grid")
+            .attr("r", radius * (level / 100));
     });
 
-    const features = ["Dance","Energy","Valence","Acoustic","Instr.","Liveness","Speech"];
+    const features = ["Dance", "Energy", "Valence", "Acoustic", "Instr.", "Liveness", "Speech"];
+    const angle = (Math.PI * 2) / features.length;
+
     features.forEach((feat, i) => {
-        const angle = (Math.PI * 2) / features.length;
-        const x = Math.cos(i * angle - Math.PI/2) * (radarRadius + 12);
-        const y = Math.sin(i * angle - Math.PI/2) * (radarRadius + 12);
+        const x = Math.cos(i * angle - Math.PI/2) * (radius + 12);
+        const y = Math.sin(i * angle - Math.PI/2) * (radius + 12);
 
         radarGroup.append("text")
+            .attr("class", "radar-axis-label")
             .attr("x", x)
             .attr("y", y)
-            .attr("text-anchor", "middle")
-            .style("fill", "#fff")
-            .style("font-size", "0.75rem")
             .text(feat);
     });
 }
@@ -239,17 +250,14 @@ function updateRadarChart(selectedMonth) {
         .attr("class", "month-shape")
         .attr("d", radarPath(stats))
         .attr("fill", "rgba(79, 140, 255, 0.4)")
-        .attr("stroke", "#b3c6ff")
-        .attr("stroke-width", 2);
+        .attr("stroke", "#b3c6ff");
 }
 
-/* ---------------------------- INIT ---------------------------- */
 
 allSongs = await loadData();
 renderGraph(countSongs(allSongs));
 initRadarChart();
 
-// Toggle compare mode
 document.getElementById("compare-toggle").addEventListener("change", (e) => {
     compareMode = e.target.checked;
     selectedMonths = [];
