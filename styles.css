@@ -90,11 +90,12 @@ ul {
 
 /* ------------------ GRAPH CONTAINERS ------------------ */
 
-#chart svg,
-#radar-chart svg {
-    width: 32vw;                 /* 缩小比例但保持水平排版 */
-    max-width: 520px;            /* 不要无限变小 */
+#chart,
+#radar-chart{
+    width: 100%;
+    max-width: 500px;      
     height: auto;
+    margin-top: -40px;
     display: inline-block;
 }
 
@@ -150,9 +151,10 @@ ul {
 }
 
 /* ------------------ LINE CHART ------------------ */
+#linegraph{
+    margin-top: 20px;
+}
 
-#compare-line svg {
-    margin-top: 30px;
-    width: 80%;
-    max-width: 900px;
+.gridlines line {
+    stroke-width: 0.2px;
 }

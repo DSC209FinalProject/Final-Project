@@ -53,19 +53,26 @@ function renderGraph(data) {
 
     const svg = d3.select('#chart')
         .append('svg')
-        .attr('viewBox', `-150 -150 ${width + 300} ${height + 300}`)
-        .style('width', '100%')
-        .style('max-width', '600px');
+        .attr('viewBox', `-50 -50 ${width + 100} ${height + 100}`)
+        .style('width', '100%');
 
     const container = svg.append('g')
-        .attr('transform', `translate(${width/2}, ${height/2})`);
+        .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
-    const pie = d3.pie().value(d => d.count);
+    const pie = d3.pie()
+        .value(d => d.count)
+        .sort(null);
     const slices = pie(data);
 
     const radius = width / 2;
     const arc = d3.arc().innerRadius(0).outerRadius(radius);
-    const color = d3.schemeTableau10;
+    const baseColors = d3.schemePaired;
+    const color = baseColors.map(c => {
+        const hsl = d3.hsl(c);
+        hsl.s *= 0.5;
+        hsl.l *= 0.7;
+        return hsl.toString();
+    });
 
     container.selectAll("path")
         .data(slices)
@@ -77,15 +84,15 @@ function renderGraph(data) {
         .attr("stroke-width", 2)
         .style("cursor", "pointer")
 
-//back hover interaction
-        .on("mouseover", function(event, d) {
+        //back hover interaction
+        .on("mouseover", function (event, d) {
             const [x, y] = arc.centroid(d);
             d3.select(this)
                 .transition()
                 .duration(150)
                 .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
         })
-        .on("mouseout", function() {
+        .on("mouseout", function () {
             d3.select(this)
                 .transition()
                 .duration(200)
@@ -94,8 +101,8 @@ function renderGraph(data) {
 
         .on("click", (event, d) => handleMonthClick(d.data.month));
 
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const labelArc = d3.arc().innerRadius(radius * 0.93).outerRadius(radius * 1.12);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const labelArc = d3.arc().innerRadius(radius * 1.01).outerRadius(radius * 1.05);
 
     container.selectAll(".pie-label")
         .data(slices)
@@ -104,7 +111,7 @@ function renderGraph(data) {
         .attr("class", "pie-label")
         .attr("transform", d => `translate(${labelArc.centroid(d)})`)
         .attr("text-anchor", "middle")
-        .style("font-size", "1.2rem")
+        .style("font-size", "3rem")
         .style("fill", "#ffffff")
         .style("font-weight", "600")
         .text(d => monthNames[d.data.month - 1]);
@@ -166,8 +173,8 @@ function updateMonthOverview(selectedMonth) {
     const topSong = monthSongs.reduce((max, s) => s.streams > max.streams ? s : max);
 
     const monthName = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December"
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     ][selectedMonth - 1];
 
     container.html(`
@@ -186,8 +193,8 @@ const radarSize = 400, radarRadius = 160;
 
 function initRadarChart() {
     const width = 450;
-    const height = 450;
-    const radius = 160;
+    const height = 500;
+    const radius = 210;
 
     radarSvg = d3.select("#radar-chart")
         .append("svg")
@@ -196,7 +203,7 @@ function initRadarChart() {
         .style("max-width", "450px");
 
     radarGroup = radarSvg.append("g")
-        .attr("transform", `translate(${width/2}, ${height/2})`);
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
     const levels = [25, 50, 75, 100];
     levels.forEach(level => {
@@ -209,8 +216,8 @@ function initRadarChart() {
     const angle = (Math.PI * 2) / features.length;
 
     features.forEach((feat, i) => {
-        const x = Math.cos(i * angle - Math.PI/2) * (radius + 12);
-        const y = Math.sin(i * angle - Math.PI/2) * (radius + 12);
+        const x = Math.cos(i * angle - Math.PI / 2) * (radius + 12);
+        const y = Math.sin(i * angle - Math.PI / 2) * (radius + 12);
 
         radarGroup.append("text")
             .attr("class", "radar-axis-label")
@@ -253,10 +260,147 @@ function updateRadarChart(selectedMonth) {
         .attr("stroke", "#b3c6ff");
 }
 
+// Line Graph
+function renderLineGraph() {
+    const width = 1200;
+    const height = 600;
+    const margin = { top: 0, right: 40, bottom: 80, left: 80 };
+
+    const usableArea = {
+        top: margin.top,
+        right: width - margin.right,
+        bottom: height - margin.bottom,
+        left: margin.left,
+        width: width - margin.left - margin.right,
+        height: height - margin.top - margin.bottom,
+    };
+
+    const monthlyData = d3.range(1, 13).map(month => {
+        const songs = allSongs.filter(d => d.released_month === month);
+        return {
+            month,
+            danceability: d3.mean(songs, d => d.danceability),
+            energy: d3.mean(songs, d => d.energy),
+            valence: d3.mean(songs, d => d.valence),
+            acousticness: d3.mean(songs, d => d.acousticness),
+            instrumentalness: d3.mean(songs, d => d.instrumentalness),
+            liveness: d3.mean(songs, d => d.liveness),
+            speechiness: d3.mean(songs, d => d.speechiness)
+        };
+    });
+
+    const svg = d3.select('#linegraph')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMinYMin')
+        .style('width', '100%')
+        .style('max-width', '1200px')
+        .style('overflow', 'visible');
+
+    const xScale = d3.scaleLinear()
+        .domain([1, 12])
+        .range([usableArea.left, usableArea.right]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, 100])
+        .range([usableArea.bottom, usableArea.top]);
+
+    const gridlines = svg.append('g')
+        .attr('class', 'gridlines')
+        .attr('transform', `translate(${usableArea.left}, 0)`);
+
+    gridlines.call(d3.axisLeft(yScale)
+        .tickSize(-usableArea.width)
+        .tickFormat(''));
+
+    const xAxis = d3.axisBottom(xScale)
+        .ticks(12)
+        .tickFormat(d => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d - 1]);
+
+    const yAxis = d3.axisLeft(yScale);
+
+    let xAxisGroup = svg.append('g')
+        .attr('class', 'x-axis')
+        .attr('transform', `translate(0, ${usableArea.bottom})`)
+        .call(xAxis);
+
+    xAxisGroup.selectAll('text')
+        .style('font-size', '14px')
+        .style('fill', '#ffffffff');
+
+    const yAxisGroup = svg.append('g')
+        .attr('class', 'y-axis')
+        .attr('transform', `translate(${usableArea.left}, 0)`)
+        .call(yAxis);
+
+    yAxisGroup.selectAll('text')
+        .style('font-size', '14px')
+        .style('fill', '#ffffffff');
+
+    svg.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('x', d3.mean([usableArea.left, usableArea.right]))
+        .attr('y', height - 20)
+        .style('font-size', '16px')
+        .style('fill', '#ffffffff')
+        .text('Month');
+
+    svg.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -d3.mean([usableArea.top, usableArea.bottom]))
+        .attr('y', usableArea.left - 50)
+        .style('font-size', '16px')
+        .style('fill', '#ffffffff')
+        .text('Mean Percentage');
+
+    const line = d3.line()
+        .x(d => xScale(d.month))
+        .y(d => yScale(d.value))
+        .curve(d3.curveMonotoneX);
+
+    const features = [
+        { key: 'danceability', label: 'Danceability', color: '#1f77b4' },
+        { key: 'energy', label: 'Energy', color: '#ff7f0e' },
+        { key: 'valence', label: 'Valence (0=moody, 100=positive)', color: '#2ca02c' },
+        { key: 'acousticness', label: 'Acousticness', color: '#d62728' },
+        { key: 'instrumentalness', label: 'Instrumentalness', color: '#9467bd' },
+        { key: 'liveness', label: 'Liveness', color: '#8c564b' },
+        { key: 'speechiness', label: 'Speechiness', color: '#e377c2' }
+    ];
+
+    features.forEach(feature => {
+        const lineData = monthlyData.map(d => ({
+            month: d.month,
+            value: d[feature.key]
+        }));
+
+        svg.append('path')
+            .datum(lineData)
+            .attr('class', `line-${feature.key}`)
+            .attr('fill', 'none')
+            .attr('stroke', feature.color)
+            .attr('stroke-width', 2)
+            .attr('d', line);
+
+        svg.selectAll(`.dot-${feature.key}`)
+            .data(lineData)
+            .enter()
+            .append('circle')
+            .attr('class', `dot-${feature.key}`)
+            .attr('cx', d => xScale(d.month))
+            .attr('cy', d => yScale(d.value))
+            .attr('r', 6)
+            .attr('fill', feature.color)
+            .attr('stroke', '#000000ff')
+            .attr('stroke-width', 1);
+    });
+}
 
 allSongs = await loadData();
 renderGraph(countSongs(allSongs));
 initRadarChart();
+renderLineGraph();
 
 document.getElementById("compare-toggle").addEventListener("change", (e) => {
     compareMode = e.target.checked;
