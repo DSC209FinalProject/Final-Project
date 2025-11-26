@@ -3,6 +3,7 @@ import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 let allSongs = [];
 let compareMode = false;
 let selectedMonths = [];
+let showAverage = false;
 
 
 async function loadData() {
@@ -160,6 +161,10 @@ function updateComparisonCharts(monthA, monthB) {
         .attr("d", radarPath(statsB))
         .attr("fill", "rgba(79, 140, 255, 0.4)")
         .attr("stroke", "#4f8cff");
+
+    if (showAverage) {
+        drawAverageShape();
+    }
 }
 
 //summary panel
@@ -258,6 +263,31 @@ function updateRadarChart(selectedMonth) {
         .attr("d", radarPath(stats))
         .attr("fill", "rgba(79, 140, 255, 0.4)")
         .attr("stroke", "#b3c6ff");
+
+    if (showAverage) {
+        drawAverageShape();
+    }
+}
+
+function drawAverageShape() {
+    radarGroup.selectAll(".average-shape").remove();
+
+    const averageStats = computeStats(allSongs);
+
+    radarGroup.append("path")
+        .attr("class", "average-shape")
+        .attr("d", radarPath(averageStats))
+        .attr("fill", "rgba(245, 245, 240, 0.3)")
+        .attr("stroke", "#f5f5f0")
+        .attr("stroke-width", 2);
+}
+
+function toggleAverageDisplay() {
+    if (showAverage) {
+        drawAverageShape();
+    } else {
+        radarGroup.selectAll(".average-shape").remove();
+    }
 }
 
 // Line Graph
@@ -406,4 +436,9 @@ document.getElementById("compare-toggle").addEventListener("change", (e) => {
     compareMode = e.target.checked;
     selectedMonths = [];
     d3.select("#compare-status").text(compareMode ? "Select two months..." : "");
+});
+
+document.getElementById("average-toggle").addEventListener("change", (e) => {
+    showAverage = e.target.checked;
+    toggleAverageDisplay();
 });
