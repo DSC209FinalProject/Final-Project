@@ -89,7 +89,11 @@ function renderGraph(data) {
 
         //back hover interaction
         .on("mouseover", function (event, d) {
-            if (currentSelectedMonth !== d.data.month) {
+            const isSelected = compareMode
+                ? selectedMonths.includes(d.data.month)
+                : currentSelectedMonth === d.data.month;
+
+            if (!isSelected) {
                 const [x, y] = arc.centroid(d);
                 d3.select(this)
                     .transition()
@@ -98,7 +102,11 @@ function renderGraph(data) {
             }
         })
         .on("mouseout", function (event, d) {
-            if (currentSelectedMonth !== d.data.month) {
+            const isSelected = compareMode
+                ? selectedMonths.includes(d.data.month)
+                : currentSelectedMonth === d.data.month;
+
+            if (!isSelected) {
                 d3.select(this)
                     .transition()
                     .duration(200)
@@ -126,31 +134,95 @@ function renderGraph(data) {
 
 //click logic
 
+const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
 function handleMonthClick(month, sliceElement) {
     if (!compareMode) {
-        currentSelectedMonth = month;
-        updatePieSliceSelection(month);
-        updateMonthOverview(month);
-        updateRadarChart(month);
+        // If clicking the same month, deselect it
+        if (currentSelectedMonth === month) {
+            clearSelections();
+        } else {
+            currentSelectedMonth = month;
+            updatePieSliceSelection(month);
+            updateMonthOverview(month);
+            updateRadarChart(month);
+        }
         return;
     }
 
-    selectedMonths.push(month);
-    selectedMonths = [...new Set(selectedMonths)];
+    // In compare mode: toggle month selection
+    if (selectedMonths.includes(month)) {
+        // Deselect the month
+        selectedMonths = selectedMonths.filter(m => m !== month);
+        updateComparisonPieSlices();
 
-    if (selectedMonths.length === 1) {
-        d3.select("#compare-status").text(`Selected: ${selectedMonths[0]} — choose another month`);
-    }
+        if (selectedMonths.length === 0) {
+            d3.select("#compare-status").text("Select two months...");
+            radarGroup.selectAll(".compare-shape").remove();
+            if (showAverage) {
+                drawAverageShape();
+            }
+        } else if (selectedMonths.length === 1) {
+            const monthName = monthNames[selectedMonths[0] - 1];
+            d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
+            radarGroup.selectAll(".compare-shape").remove();
+            // Show the single month blob
+            updateSingleComparisonChart(selectedMonths[0]);
+        }
+    } else {
+        // Select the month
+        selectedMonths.push(month);
+        selectedMonths = [...new Set(selectedMonths)];
 
-    if (selectedMonths.length === 2) {
-        d3.select("#compare-status").text(`Comparing: ${selectedMonths[0]} vs ${selectedMonths[1]}`);
-        radarGroup.selectAll(".compare-shape").remove();
-        updateComparisonCharts(selectedMonths[0], selectedMonths[1]);
+        // Limit to 2 months
+        if (selectedMonths.length > 2) {
+            selectedMonths.shift(); // Remove the first selected month
+        }
+
+        updateComparisonPieSlices();
+
+        if (selectedMonths.length === 1) {
+            const monthName = monthNames[selectedMonths[0] - 1];
+            d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
+            radarGroup.selectAll(".compare-shape").remove();
+            // Show the single month blob
+            updateSingleComparisonChart(selectedMonths[0]);
+        }
+
+        if (selectedMonths.length === 2) {
+            const monthName1 = monthNames[selectedMonths[0] - 1];
+            const monthName2 = monthNames[selectedMonths[1] - 1];
+            d3.select("#compare-status").text(`Comparing ${monthName1} vs ${monthName2} of 2023`);
+            radarGroup.selectAll(".compare-shape").remove();
+            updateComparisonCharts(selectedMonths[0], selectedMonths[1]);
+        }
     }
 }
 
-function updatePieSliceSelection(selectedMonth) {
+function updateComparisonPieSlices() {
     pieSlices.each(function(d) {
+        const slice = d3.select(this);
+        const sliceData = slice.data()[0];
+
+        if (selectedMonths.includes(sliceData.data.month)) {
+            const arc = d3.arc().innerRadius(0).outerRadius(450);
+            const [x, y] = arc.centroid(sliceData);
+            slice.transition()
+                .duration(200)
+                .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
+        } else {
+            slice.transition()
+                .duration(200)
+                .attr("transform", "translate(0,0)");
+        }
+    });
+}
+
+function updatePieSliceSelection(selectedMonth) {
+    pieSlices.each(function (d) {
         const slice = d3.select(this);
         const sliceData = slice.data()[0];
 
@@ -189,6 +261,25 @@ function clearSelections() {
 
 //compare month
 
+function updateSingleComparisonChart(month) {
+    const songs = allSongs.filter(d => d.released_month === month);
+    const stats = computeStats(songs);
+
+    const monthColor = window.pieColors[month - 1];
+    const colorObj = d3.color(monthColor);
+    const rgbaFill = `rgba(${colorObj.r}, ${colorObj.g}, ${colorObj.b}, 0.4)`;
+
+    radarGroup.append("path")
+        .attr("class", "compare-shape")
+        .attr("d", radarPath(stats))
+        .attr("fill", rgbaFill)
+        .attr("stroke", monthColor);
+
+    if (showAverage) {
+        drawAverageShape();
+    }
+}
+
 function updateComparisonCharts(monthA, monthB) {
     const songsA = allSongs.filter(d => d.released_month === monthA);
     const songsB = allSongs.filter(d => d.released_month === monthB);
@@ -196,17 +287,26 @@ function updateComparisonCharts(monthA, monthB) {
     const statsA = computeStats(songsA);
     const statsB = computeStats(songsB);
 
+    // Get colors for each month from the pie chart
+    const colorA = window.pieColors[monthA - 1];
+    const colorObjA = d3.color(colorA);
+    const rgbaFillA = `rgba(${colorObjA.r}, ${colorObjA.g}, ${colorObjA.b}, 0.4)`;
+
+    const colorB = window.pieColors[monthB - 1];
+    const colorObjB = d3.color(colorB);
+    const rgbaFillB = `rgba(${colorObjB.r}, ${colorObjB.g}, ${colorObjB.b}, 0.4)`;
+
     radarGroup.append("path")
         .attr("class", "compare-shape")
         .attr("d", radarPath(statsA))
-        .attr("fill", "rgba(255, 145, 164, 0.4)")
-        .attr("stroke", "#ff6384");
+        .attr("fill", rgbaFillA)
+        .attr("stroke", colorA);
 
     radarGroup.append("path")
         .attr("class", "compare-shape")
         .attr("d", radarPath(statsB))
-        .attr("fill", "rgba(79, 140, 255, 0.4)")
-        .attr("stroke", "#4f8cff");
+        .attr("fill", rgbaFillB)
+        .attr("stroke", colorB);
 
     if (showAverage) {
         drawAverageShape();
@@ -223,17 +323,19 @@ function updateMonthOverview(selectedMonth) {
     const totalStreams = d3.sum(monthSongs, d => d.streams);
     const topSong = monthSongs.reduce((max, s) => s.streams > max.streams ? s : max);
 
-    const monthName = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ][selectedMonth - 1];
+    const monthName = monthNames[selectedMonth - 1];
+
+    const monthColor = window.pieColors[selectedMonth - 1];
+    const colorObj = d3.hsl(monthColor);
+    colorObj.l = Math.min(0.85, colorObj.l + 0.3);
+    const lightColor = colorObj.toString();
 
     container.html(`
-        <h3>${monthName}</h3>
-        <div><strong>${monthSongs.length}</strong> songs released</div>
-        <div><strong>${(totalStreams / 1e6).toFixed(1)}M</strong> total streams</div>
-        <div>Avg streams: <strong>${(avgStreams / 1e6).toFixed(1)}M</strong></div>
-        <div><strong>Top song:</strong> ${topSong.track} – ${topSong.artist}</div>
+        <h3 style="color: ${lightColor}">${monthName}</h3>
+        <div style="color: ${lightColor}"><strong>${monthSongs.length}</strong> songs released</div>
+        <div style="color: ${lightColor}"><strong>${(totalStreams / 1e6).toFixed(1)}M</strong> total streams</div>
+        <div style="color: ${lightColor}">Avg streams: <strong>${(avgStreams / 1e6).toFixed(1)}M</strong></div>
+        <div style="color: ${lightColor}"><strong>Top song:</strong> ${topSong.track} – ${topSong.artist}</div>
     `);
 }
 
@@ -484,8 +586,32 @@ renderLineGraph();
 
 document.getElementById("compare-toggle").addEventListener("change", (e) => {
     compareMode = e.target.checked;
-    selectedMonths = [];
-    d3.select("#compare-status").text(compareMode ? "Select two months..." : "");
+
+    if (compareMode) {
+        // If a month is already selected, add it to the comparison
+        if (currentSelectedMonth !== null) {
+            selectedMonths = [currentSelectedMonth];
+            const monthName = monthNames[currentSelectedMonth - 1];
+            d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
+            // Show the first month blob on radar chart
+            radarGroup.selectAll(".compare-shape").remove();
+            radarGroup.selectAll(".month-shape").remove();
+            updateSingleComparisonChart(currentSelectedMonth);
+        } else {
+            selectedMonths = [];
+            d3.select("#compare-status").text("Select two months...");
+        }
+    } else {
+        // When exiting compare mode, restore single selection if there was one
+        if (selectedMonths.length > 0) {
+            currentSelectedMonth = selectedMonths[0];
+            updatePieSliceSelection(currentSelectedMonth);
+            updateMonthOverview(currentSelectedMonth);
+            updateRadarChart(currentSelectedMonth);
+        }
+        selectedMonths = [];
+        d3.select("#compare-status").text("");
+    }
 });
 
 document.getElementById("average-toggle").addEventListener("change", (e) => {
