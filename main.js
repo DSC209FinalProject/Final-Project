@@ -4,6 +4,8 @@ let allSongs = [];
 let compareMode = false;
 let selectedMonths = [];
 let showAverage = false;
+let currentSelectedMonth = null;
+let pieSlices = null;
 
 
 async function loadData() {
@@ -68,39 +70,43 @@ function renderGraph(data) {
     const radius = width / 2;
     const arc = d3.arc().innerRadius(0).outerRadius(radius);
     const baseColors = d3.schemePaired;
-    const color = baseColors.map(c => {
+    window.pieColors = baseColors.map(c => {
         const hsl = d3.hsl(c);
         hsl.s *= 0.5;
         hsl.l *= 0.7;
         return hsl.toString();
     });
 
-    container.selectAll("path")
+    pieSlices = container.selectAll("path")
         .data(slices)
         .enter()
         .append("path")
         .attr("d", arc)
-        .attr("fill", (d, i) => color[i])
+        .attr("fill", (d, i) => window.pieColors[i])
         .attr("stroke", "#1a1a1a")
         .attr("stroke-width", 2)
         .style("cursor", "pointer")
 
         //back hover interaction
         .on("mouseover", function (event, d) {
-            const [x, y] = arc.centroid(d);
-            d3.select(this)
-                .transition()
-                .duration(150)
-                .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
+            if (currentSelectedMonth !== d.data.month) {
+                const [x, y] = arc.centroid(d);
+                d3.select(this)
+                    .transition()
+                    .duration(150)
+                    .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
+            }
         })
-        .on("mouseout", function () {
-            d3.select(this)
-                .transition()
-                .duration(200)
-                .attr("transform", "translate(0,0)");
+        .on("mouseout", function (event, d) {
+            if (currentSelectedMonth !== d.data.month) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("transform", "translate(0,0)");
+            }
         })
 
-        .on("click", (event, d) => handleMonthClick(d.data.month));
+        .on("click", (event, d) => handleMonthClick(d.data.month, event.currentTarget));
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const labelArc = d3.arc().innerRadius(radius * 1.01).outerRadius(radius * 1.05);
@@ -120,8 +126,10 @@ function renderGraph(data) {
 
 //click logic
 
-function handleMonthClick(month) {
+function handleMonthClick(month, sliceElement) {
     if (!compareMode) {
+        currentSelectedMonth = month;
+        updatePieSliceSelection(month);
         updateMonthOverview(month);
         updateRadarChart(month);
         return;
@@ -138,6 +146,44 @@ function handleMonthClick(month) {
         d3.select("#compare-status").text(`Comparing: ${selectedMonths[0]} vs ${selectedMonths[1]}`);
         radarGroup.selectAll(".compare-shape").remove();
         updateComparisonCharts(selectedMonths[0], selectedMonths[1]);
+    }
+}
+
+function updatePieSliceSelection(selectedMonth) {
+    pieSlices.each(function(d) {
+        const slice = d3.select(this);
+        const sliceData = slice.data()[0];
+
+        if (sliceData.data.month === selectedMonth) {
+            const arc = d3.arc().innerRadius(0).outerRadius(450);
+            const [x, y] = arc.centroid(sliceData);
+            slice.transition()
+                .duration(200)
+                .attr("transform", `translate(${x * 0.08}, ${y * 0.08})`);
+        } else {
+            slice.transition()
+                .duration(200)
+                .attr("transform", "translate(0,0)");
+        }
+    });
+}
+
+function clearSelections() {
+    currentSelectedMonth = null;
+    selectedMonths = [];
+
+    pieSlices.transition()
+        .duration(200)
+        .attr("transform", "translate(0,0)");
+
+    d3.select("#month-summary").html("");
+    d3.select("#compare-status").text(compareMode ? "Select two months..." : "");
+
+    radarGroup.selectAll(".month-shape").remove();
+    radarGroup.selectAll(".compare-shape").remove();
+
+    if (showAverage) {
+        drawAverageShape();
     }
 }
 
@@ -258,11 +304,15 @@ function updateRadarChart(selectedMonth) {
 
     radarGroup.selectAll(".month-shape").remove();
 
+    const monthColor = window.pieColors[selectedMonth - 1];
+    const colorObj = d3.color(monthColor);
+    const rgbaFill = `rgba(${colorObj.r}, ${colorObj.g}, ${colorObj.b}, 0.4)`;
+
     radarGroup.append("path")
         .attr("class", "month-shape")
         .attr("d", radarPath(stats))
-        .attr("fill", "rgba(79, 140, 255, 0.4)")
-        .attr("stroke", "#b3c6ff");
+        .attr("fill", rgbaFill)
+        .attr("stroke", monthColor);
 
     if (showAverage) {
         drawAverageShape();
@@ -441,4 +491,8 @@ document.getElementById("compare-toggle").addEventListener("change", (e) => {
 document.getElementById("average-toggle").addEventListener("change", (e) => {
     showAverage = e.target.checked;
     toggleAverageDisplay();
+});
+
+document.getElementById("clear-selections-btn").addEventListener("click", () => {
+    clearSelections();
 });
