@@ -161,6 +161,7 @@ function handleMonthClick(month, sliceElement) {
 
         if (selectedMonths.length === 0) {
             d3.select("#compare-status").text("Select two months...");
+            d3.select("#month-summary").html("").attr("class", "");
             radarGroup.selectAll(".compare-shape").remove();
             if (showAverage) {
                 drawAverageShape();
@@ -168,6 +169,7 @@ function handleMonthClick(month, sliceElement) {
         } else if (selectedMonths.length === 1) {
             const monthName = monthNames[selectedMonths[0] - 1];
             d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
+            d3.select("#month-summary").html("").attr("class", "");
             radarGroup.selectAll(".compare-shape").remove();
             // Show the single month blob
             updateSingleComparisonChart(selectedMonths[0]);
@@ -198,6 +200,7 @@ function handleMonthClick(month, sliceElement) {
             d3.select("#compare-status").text(`Comparing ${monthName1} vs ${monthName2} of 2023`);
             radarGroup.selectAll(".compare-shape").remove();
             updateComparisonCharts(selectedMonths[0], selectedMonths[1]);
+            updateComparisonOverview(selectedMonths[0], selectedMonths[1]);
         }
     }
 }
@@ -248,7 +251,7 @@ function clearSelections() {
         .duration(200)
         .attr("transform", "translate(0,0)");
 
-    d3.select("#month-summary").html("");
+    d3.select("#month-summary").html("").attr("class", "");
     d3.select("#compare-status").text(compareMode ? "Select two months..." : "");
 
     radarGroup.selectAll(".month-shape").remove();
@@ -317,6 +320,7 @@ function updateComparisonCharts(monthA, monthB) {
 
 function updateMonthOverview(selectedMonth) {
     const container = d3.select("#month-summary");
+    container.attr("class", ""); // Remove compare-mode class
 
     const monthSongs = allSongs.filter(d => d.released_month === selectedMonth);
     const avgStreams = d3.mean(monthSongs, d => d.streams);
@@ -337,6 +341,36 @@ function updateMonthOverview(selectedMonth) {
         <div style="color: ${lightColor}">Avg streams: <strong>${(avgStreams / 1e6).toFixed(1)}M</strong></div>
         <div style="color: ${lightColor}"><strong>Top song:</strong> ${topSong.track} – ${topSong.artist}</div>
     `);
+}
+
+function updateComparisonOverview(monthA, monthB) {
+    const container = d3.select("#month-summary");
+    container.attr("class", "compare-mode");
+
+    const createMonthCard = (month) => {
+        const monthSongs = allSongs.filter(d => d.released_month === month);
+        const avgStreams = d3.mean(monthSongs, d => d.streams);
+        const totalStreams = d3.sum(monthSongs, d => d.streams);
+        const topSong = monthSongs.reduce((max, s) => s.streams > max.streams ? s : max);
+
+        const monthName = monthNames[month - 1];
+        const monthColor = window.pieColors[month - 1];
+        const colorObj = d3.hsl(monthColor);
+        colorObj.l = Math.min(0.85, colorObj.l + 0.3);
+        const lightColor = colorObj.toString();
+
+        return `
+            <div class="month-summary-card">
+                <h3 style="color: ${lightColor}">${monthName}</h3>
+                <div style="color: ${lightColor}"><strong>${monthSongs.length}</strong> songs released</div>
+                <div style="color: ${lightColor}"><strong>${(totalStreams / 1e6).toFixed(1)}M</strong> total streams</div>
+                <div style="color: ${lightColor}">Avg streams: <strong>${(avgStreams / 1e6).toFixed(1)}M</strong></div>
+                <div style="color: ${lightColor}"><strong>Top song:</strong> ${topSong.track} – ${topSong.artist}</div>
+            </div>
+        `;
+    };
+
+    container.html(createMonthCard(monthA) + createMonthCard(monthB));
 }
 
 //radar chart
@@ -621,4 +655,19 @@ document.getElementById("average-toggle").addEventListener("change", (e) => {
 
 document.getElementById("clear-selections-btn").addEventListener("click", () => {
     clearSelections();
+
+    // Uncheck compare months toggle
+    const compareToggle = document.getElementById("compare-toggle");
+    if (compareToggle.checked) {
+        compareToggle.checked = false;
+        compareMode = false;
+    }
+
+    // Uncheck show average toggle
+    const averageToggle = document.getElementById("average-toggle");
+    if (averageToggle.checked) {
+        averageToggle.checked = false;
+        showAverage = false;
+        radarGroup.selectAll(".average-shape").remove();
+    }
 });

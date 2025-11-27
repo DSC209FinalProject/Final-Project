@@ -88,6 +88,34 @@ ul {
     font-size: 1.8rem;
 }
 
+/* Compare mode: side-by-side summaries */
+#month-summary.compare-mode {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: stretch;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.month-summary-card {
+    background-color: #2A2A2C;
+    border-radius: 14px;
+    padding: 2rem 3rem;
+    text-align: center;
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
+    flex: 1;
+    max-width: 400px;
+    font-size: 1.1rem;
+}
+
+.month-summary-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    font-size: 1.8rem;
+}
+
 /* ------------------ GRAPH CONTAINERS ------------------ */
 
 #chart,
