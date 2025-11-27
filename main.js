@@ -7,6 +7,28 @@ let showAverage = false;
 let currentSelectedMonth = null;
 let pieSlices = null;
 
+let radarSvg, radarGroup;
+const radarSize = 400, radarRadius = 160;
+
+// list of features used in the line graph + artist section.
+const FEATURES = [
+    { key: 'danceability', label: 'Danceability', color: '#1f77b4' },
+    { key: 'energy', label: 'Energy', color: '#ff7f0e' },
+    { key: 'valence', label: 'Valence (0=moody, 100=positive)', color: '#2ca02c' },
+    { key: 'acousticness', label: 'Acousticness', color: '#d62728' },
+    { key: 'instrumentalness', label: 'Instrumentalness', color: '#9467bd' },
+    { key: 'liveness', label: 'Liveness', color: '#8c564b' },
+    { key: 'speechiness', label: 'Speechiness', color: '#e377c2' }
+];
+
+// line graph visibility state.
+let activeFeatureKeys = FEATURES.map(f => f.key);
+
+// store precomputed monthly averages for the line graph.
+let monthlyFeatureData = null;
+
+// store overall 2023 averages for each feature (used for artist deltas).
+let globalFeatureStats = null;
 
 async function loadData() {
     const dataset = await d3.csv("./data/spotify-2023.csv", d => ({
@@ -36,7 +58,7 @@ function countSongs(data) {
 }
 
 //metric computation
-
+// Helper that takes a list of songs and returns mean values for all audio features.
 function computeStats(songs) {
     return {
         danceability: d3.mean(songs, d => d.danceability),
@@ -69,13 +91,25 @@ function renderGraph(data) {
 
     const radius = width / 2;
     const arc = d3.arc().innerRadius(0).outerRadius(radius);
-    const baseColors = d3.schemePaired;
-    window.pieColors = baseColors.map(c => {
-        const hsl = d3.hsl(c);
-        hsl.s *= 0.5;
-        hsl.l *= 0.7;
-        return hsl.toString();
-    });
+
+    // Custom dark-mode-friendly palette: 12 distinct hues (one per month).
+    const piePalette = [
+        "#4e79a7", // Jan - blue
+        "#f28e2b", // Feb - orange
+        "#e15759", // Mar - red
+        "#76b7b2", // Apr - teal
+        "#59a14f", // May - green
+        "#edc949", // Jun - yellow
+        "#af7aa1", // Jul - purple
+        "#ff9da7", // Aug - pink
+        "#9c755f", // Sep - brown
+        "#bab0ab", // Oct - gray
+        "#6b6ecf", // Nov - indigo
+        "#b6e880"  // Dec - light green
+    ];
+
+    // Expose pie colors to reuse in summary cards and radar outlines.
+    window.pieColors = piePalette;
 
     pieSlices = container.selectAll("path")
         .data(slices)
@@ -116,7 +150,7 @@ function renderGraph(data) {
 
         .on("click", (event, d) => handleMonthClick(d.data.month, event.currentTarget));
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const labelArc = d3.arc().innerRadius(radius * 1.01).outerRadius(radius * 1.05);
 
     container.selectAll(".pie-label")
@@ -129,7 +163,7 @@ function renderGraph(data) {
         .style("font-size", "3rem")
         .style("fill", "#ffffff")
         .style("font-weight", "600")
-        .text(d => monthNames[d.data.month - 1]);
+        .text(d => monthNamesShort[d.data.month - 1]);
 }
 
 //click logic
@@ -380,13 +414,13 @@ function updateComparisonOverview(monthA, monthB) {
 
 //radar chart
 
-let radarSvg, radarGroup;
-const radarSize = 400, radarRadius = 160;
-
 function initRadarChart() {
-    const width = 450;
-    const height = 500;
-    const radius = 210;
+    // Slightly larger canvas so labels don't get clipped on the edges
+    const width = 500;
+    const height = 540;
+
+    // Use a radius that leaves some padding inside the viewBox
+    const radius = 190;
 
     radarSvg = d3.select("#radar-chart")
         .append("svg")
@@ -394,8 +428,9 @@ function initRadarChart() {
         .style("width", "100%")
         .style("max-width", "450px");
 
+    // Move the radar group to the visual center (a tiny bit down from exact center)
     radarGroup = radarSvg.append("g")
-        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+        .attr("transform", `translate(${width / 2}, ${height / 2 + 5})`);
 
     const levels = [25, 50, 75, 100];
     levels.forEach(level => {
@@ -408,13 +443,16 @@ function initRadarChart() {
     const angle = (Math.PI * 2) / features.length;
 
     features.forEach((feat, i) => {
-        const x = Math.cos(i * angle - Math.PI / 2) * (radius + 12);
-        const y = Math.sin(i * angle - Math.PI / 2) * (radius + 12);
+        // Place labels slightly outside the outer circle
+        const labelRadius = radius + 18;
+        const x = Math.cos(i * angle - Math.PI / 2) * labelRadius;
+        const y = Math.sin(i * angle - Math.PI / 2) * labelRadius;
 
         radarGroup.append("text")
             .attr("class", "radar-axis-label")
             .attr("x", x)
             .attr("y", y)
+            .attr("text-anchor", "middle")
             .text(feat);
     });
 }
@@ -482,6 +520,56 @@ function toggleAverageDisplay() {
 }
 
 // Line Graph
+
+function computeMonthlyFeatureData() {
+    // Pre-compute monthly averages for each audio feature (1 row per month).
+    monthlyFeatureData = d3.range(1, 13).map(month => {
+        const songs = allSongs.filter(d => d.released_month === month);
+        return {
+            month,
+            danceability: d3.mean(songs, d => d.danceability),
+            energy: d3.mean(songs, d => d.energy),
+            valence: d3.mean(songs, d => d.valence),
+            acousticness: d3.mean(songs, d => d.acousticness),
+            instrumentalness: d3.mean(songs, d => d.instrumentalness),
+            liveness: d3.mean(songs, d => d.liveness),
+            speechiness: d3.mean(songs, d => d.speechiness)
+        };
+    });
+}
+
+// build the checkboxes that control which features are drawn in the line graph.
+function buildFeatureCheckboxes() {
+    const container = d3.select("#feature-checkboxes");
+
+    const options = container.selectAll(".feature-option")
+        .data(FEATURES)
+        .enter()
+        .append("label")
+        .attr("class", "feature-option");
+
+    options.append("input")
+        .attr("type", "checkbox")
+        .attr("checked", true)
+        .on("change", function (event, d) {
+            if (this.checked) {
+                // add this feature back in
+                if (!activeFeatureKeys.includes(d.key)) {
+                    activeFeatureKeys.push(d.key);
+                }
+            } else {
+                // remove this feature from the active list
+                activeFeatureKeys = activeFeatureKeys.filter(k => k !== d.key);
+            }
+            // redraw the line graph with the new set of active features
+            renderLineGraph();
+        });
+
+    options.append("span")
+        .text(d => d.label)
+        .style("border-bottom-color", d => d.color);
+}
+
 function renderLineGraph() {
     const width = 1200;
     const height = 600;
@@ -496,19 +584,8 @@ function renderLineGraph() {
         height: height - margin.top - margin.bottom,
     };
 
-    const monthlyData = d3.range(1, 13).map(month => {
-        const songs = allSongs.filter(d => d.released_month === month);
-        return {
-            month,
-            danceability: d3.mean(songs, d => d.danceability),
-            energy: d3.mean(songs, d => d.energy),
-            valence: d3.mean(songs, d => d.valence),
-            acousticness: d3.mean(songs, d => d.acousticness),
-            instrumentalness: d3.mean(songs, d => d.instrumentalness),
-            liveness: d3.mean(songs, d => d.liveness),
-            speechiness: d3.mean(songs, d => d.speechiness)
-        };
-    });
+    // Clear any previous SVG so we can fully redraw the graph.
+    d3.select('#linegraph').selectAll('*').remove();
 
     const svg = d3.select('#linegraph')
         .append('svg')
@@ -580,18 +657,11 @@ function renderLineGraph() {
         .y(d => yScale(d.value))
         .curve(d3.curveMonotoneX);
 
-    const features = [
-        { key: 'danceability', label: 'Danceability', color: '#1f77b4' },
-        { key: 'energy', label: 'Energy', color: '#ff7f0e' },
-        { key: 'valence', label: 'Valence (0=moody, 100=positive)', color: '#2ca02c' },
-        { key: 'acousticness', label: 'Acousticness', color: '#d62728' },
-        { key: 'instrumentalness', label: 'Instrumentalness', color: '#9467bd' },
-        { key: 'liveness', label: 'Liveness', color: '#8c564b' },
-        { key: 'speechiness', label: 'Speechiness', color: '#e377c2' }
-    ];
+    // Draw one line + dots for each feature that is currently active.
+    FEATURES.forEach(feature => {
+        if (!activeFeatureKeys.includes(feature.key)) return;
 
-    features.forEach(feature => {
-        const lineData = monthlyData.map(d => ({
+        const lineData = monthlyFeatureData.map(d => ({
             month: d.month,
             value: d[feature.key]
         }));
@@ -618,11 +688,167 @@ function renderLineGraph() {
     });
 }
 
+/* ==================== ARTIST INSIGHTS HELPERS ==================== */
+
+// Build the artist dropdown from the dataset (use top artists by song count).
+function buildArtistDropdown() {
+    const artistCounts = d3.rollup(
+        allSongs,
+        v => v.length,
+        d => d.artist
+    );
+
+    // Turn the map into an array and sort by count descending.
+    let artists = Array.from(artistCounts, ([artist, count]) => ({ artist, count }))
+        .sort((a, b) => d3.descending(a.count, b.count));
+
+    // Keep only the top 30 artists so the dropdown isn't huge.
+    artists = artists.slice(0, 30);
+
+    const select = d3.select("#artist-select");
+
+    select.selectAll("option.artist-option").remove();
+
+    select.selectAll("option.artist-option")
+        .data(artists)
+        .enter()
+        .append("option")
+        .attr("class", "artist-option")
+        .attr("value", d => d.artist)
+        .text(d => `${d.artist} (${d.count} songs)`);
+
+    // When the user picks an artist, draw the delta bar chart.
+    select.on("change", function () {
+        const artistName = this.value;
+        renderArtistDeltaChart(artistName);
+    });
+}
+
+// Draw a horizontal bar chart showing (artist avg - global avg) for each feature.
+function renderArtistDeltaChart(artistName) {
+    const container = d3.select("#artist-delta-chart");
+    container.selectAll("*").remove();
+
+    if (!artistName) {
+        // If no artist selected, show a small message.
+        container.append("p")
+            .style("color", "#d0d0d5")
+            .text("Select an artist above to see how their sound differs from the 2023 average.");
+        return;
+    }
+
+    const artistSongs = allSongs.filter(d => d.artist === artistName);
+
+    if (artistSongs.length === 0) {
+        container.append("p")
+            .style("color", "#d0d0d5")
+            .text("No songs found for this artist in the dataset.");
+        return;
+    }
+
+    // Compute average audio features for the chosen artist.
+    const artistStats = computeStats(artistSongs);
+
+    // Compute feature deltas: artist average - global 2023 average.
+    const deltas = FEATURES.map(f => {
+        const artistValue = artistStats[f.key];
+        const globalValue = globalFeatureStats[f.key];
+        return {
+            featureKey: f.key,
+            label: f.label,
+            delta: artistValue - globalValue
+        };
+    });
+
+    const width = 900;
+    const height = 40 * FEATURES.length + 80;
+    const margin = { top: 20, right: 80, bottom: 30, left: 180 };
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("max-width", "900px");
+
+    const xMax = d3.max(deltas, d => Math.abs(d.delta)) || 1;
+    const xScale = d3.scaleLinear()
+        .domain([-xMax, xMax])
+        .range([margin.left, width - margin.right]);
+
+    const yScale = d3.scaleBand()
+        .domain(deltas.map(d => d.label))
+        .range([margin.top, height - margin.bottom])
+        .padding(0.25);
+
+    // Zero line helps the viewer see positive vs negative differences.
+    svg.append("line")
+        .attr("x1", xScale(0))
+        .attr("x2", xScale(0))
+        .attr("y1", margin.top - 10)
+        .attr("y2", height - margin.bottom)
+        .attr("stroke", "#666")
+        .attr("stroke-width", 0.8)
+        .attr("stroke-dasharray", "3,3");
+
+    // One horizontal bar per feature.
+    svg.selectAll(".artist-delta-bar")
+        .data(deltas)
+        .enter()
+        .append("rect")
+        .attr("class", "artist-delta-bar")
+        .attr("y", d => yScale(d.label))
+        .attr("height", yScale.bandwidth())
+        .attr("x", d => d.delta >= 0 ? xScale(0) : xScale(d.delta))
+        .attr("width", d => Math.abs(xScale(d.delta) - xScale(0)))
+        .attr("fill", d => d.delta >= 0 ? "#2ca02c" : "#d62728");
+
+    // Feature labels on the left.
+    svg.append("g")
+        .attr("class", "artist-delta-y-axis")
+        .attr("transform", `translate(${margin.left - 10},0)`)
+        .call(d3.axisLeft(yScale))
+        .selectAll("text")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "12px");
+
+    // X-axis with small ticks (delta values).
+    svg.append("g")
+        .attr("class", "artist-delta-x-axis")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(xScale).ticks(5))
+        .selectAll("text")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "11px");
+
+    // Small text label below the chart.
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height - 5)
+        .attr("text-anchor", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "12px")
+        .text(`${artistName}: value > 0 means higher than 2023 average; value < 0 means lower.`);
+}
+
+
+// =================== INITIALIZE EVERYTHING ===================
+
 allSongs = await loadData();
 renderGraph(countSongs(allSongs));
 initRadarChart();
+
+// Precompute data for other views.
+computeMonthlyFeatureData();
+buildFeatureCheckboxes();
 renderLineGraph();
 
+// Compute global average feature stats once for the artist section.
+globalFeatureStats = computeStats(allSongs);
+
+// Build artist dropdown and show default message in the artist chart area.
+buildArtistDropdown();
+renderArtistDeltaChart("");
+
+// Toggle between compare-mode and single-mode
 document.getElementById("compare-toggle").addEventListener("change", (e) => {
     compareMode = e.target.checked;
 
