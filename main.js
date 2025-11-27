@@ -161,7 +161,9 @@ function handleMonthClick(month, sliceElement) {
 
         if (selectedMonths.length === 0) {
             d3.select("#compare-status").text("Select two months...");
-            d3.select("#month-summary").html("").attr("class", "");
+            d3.select("#month-summary")
+                .html('<p style="color: #f5f5f7; margin: 0;">Click a slice to explore that month.</p>')
+                .attr("class", "");
             radarGroup.selectAll(".compare-shape").remove();
             if (showAverage) {
                 drawAverageShape();
@@ -169,10 +171,10 @@ function handleMonthClick(month, sliceElement) {
         } else if (selectedMonths.length === 1) {
             const monthName = monthNames[selectedMonths[0] - 1];
             d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
-            d3.select("#month-summary").html("").attr("class", "");
             radarGroup.selectAll(".compare-shape").remove();
-            // Show the single month blob
+            // Show the single month blob and summary
             updateSingleComparisonChart(selectedMonths[0]);
+            updateMonthOverview(selectedMonths[0]);
         }
     } else {
         // Select the month
@@ -190,8 +192,9 @@ function handleMonthClick(month, sliceElement) {
             const monthName = monthNames[selectedMonths[0] - 1];
             d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
             radarGroup.selectAll(".compare-shape").remove();
-            // Show the single month blob
+            // Show the single month blob and summary
             updateSingleComparisonChart(selectedMonths[0]);
+            updateMonthOverview(selectedMonths[0]);
         }
 
         if (selectedMonths.length === 2) {
@@ -251,7 +254,9 @@ function clearSelections() {
         .duration(200)
         .attr("transform", "translate(0,0)");
 
-    d3.select("#month-summary").html("").attr("class", "");
+    d3.select("#month-summary")
+        .html('<p style="color: #f5f5f7; margin: 0;">Click a slice to explore that month.</p>')
+        .attr("class", "");
     d3.select("#compare-status").text(compareMode ? "Select two months..." : "");
 
     radarGroup.selectAll(".month-shape").remove();
@@ -320,7 +325,7 @@ function updateComparisonCharts(monthA, monthB) {
 
 function updateMonthOverview(selectedMonth) {
     const container = d3.select("#month-summary");
-    container.attr("class", ""); // Remove compare-mode class
+    container.attr("class", "single-month");
 
     const monthSongs = allSongs.filter(d => d.released_month === selectedMonth);
     const avgStreams = d3.mean(monthSongs, d => d.streams);
@@ -627,13 +632,17 @@ document.getElementById("compare-toggle").addEventListener("change", (e) => {
             selectedMonths = [currentSelectedMonth];
             const monthName = monthNames[currentSelectedMonth - 1];
             d3.select("#compare-status").text(`Selected: ${monthName} — choose another month`);
-            // Show the first month blob on radar chart
+            // Show the first month blob on radar chart and keep the summary
             radarGroup.selectAll(".compare-shape").remove();
             radarGroup.selectAll(".month-shape").remove();
             updateSingleComparisonChart(currentSelectedMonth);
+            updateMonthOverview(currentSelectedMonth);
         } else {
             selectedMonths = [];
             d3.select("#compare-status").text("Select two months...");
+            d3.select("#month-summary")
+                .html('<p style="color: #f5f5f7; margin: 0;">Click a slice to explore that month.</p>')
+                .attr("class", "");
         }
     } else {
         // When exiting compare mode, restore single selection if there was one

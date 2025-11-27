@@ -80,6 +80,9 @@ ul {
     margin: 0 auto;
     transition: opacity 0.3s ease;
     font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #month-summary h3 {
@@ -97,6 +100,10 @@ ul {
     padding: 0;
     background-color: transparent;
     box-shadow: none;
+}
+
+#month-summary.single-month {
+    display: block;
 }
 
 .month-summary-card {
