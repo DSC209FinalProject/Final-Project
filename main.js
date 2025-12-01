@@ -14,7 +14,7 @@ const radarSize = 400, radarRadius = 160;
 const FEATURES = [
     { key: 'danceability', label: 'Danceability', color: '#1f77b4' },
     { key: 'energy', label: 'Energy', color: '#ff7f0e' },
-    { key: 'valence', label: 'Valence (0=moody, 100=positive)', color: '#2ca02c' },
+    { key: 'valence', label: 'Valence', color: '#2ca02c' },
     { key: 'acousticness', label: 'Acousticness', color: '#d62728' },
     { key: 'instrumentalness', label: 'Instrumentalness', color: '#9467bd' },
     { key: 'liveness', label: 'Liveness', color: '#8c564b' },
@@ -151,7 +151,7 @@ function renderGraph(data) {
         .on("click", (event, d) => handleMonthClick(d.data.month, event.currentTarget));
 
     const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const labelArc = d3.arc().innerRadius(radius * 1.01).outerRadius(radius * 1.05);
+    const labelArc = d3.arc().innerRadius(radius * 1.01).outerRadius(radius * 1.02);
 
     container.selectAll(".pie-label")
         .data(slices)
