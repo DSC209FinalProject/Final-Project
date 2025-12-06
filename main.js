@@ -769,6 +769,7 @@ function renderArtistImpactChart() {
         .enter()
         .append("rect")
         .attr("class", "impact-bar")
+        .attr("data-artist", d => d.artist)
         .attr("x", margin.left)
         .attr("y", d => yScale(d.artist))
         .attr("width", d => xScale(d.totalStreams) - margin.left)
@@ -781,11 +782,19 @@ function renderArtistImpactChart() {
             // Scroll to the artist delta chart
             document.getElementById("artist-delta-chart").scrollIntoView({ behavior: "smooth", block: "nearest" });
         })
-        .on("mouseover", function () {
+        .on("mouseover", function (_, d) {
+            // Highlight both bar and name
             d3.select(this).attr("opacity", 1);
+            svg.selectAll(".artist-name-label")
+                .filter(labelData => labelData.artist === d.artist)
+                .style("text-decoration", "underline");
         })
-        .on("mouseout", function () {
+        .on("mouseout", function (_, d) {
+            // Remove highlight from both bar and name
             d3.select(this).attr("opacity", 0.85);
+            svg.selectAll(".artist-name-label")
+                .filter(labelData => labelData.artist === d.artist)
+                .style("text-decoration", "none");
         });
 
     // Add ranking numbers
@@ -809,6 +818,7 @@ function renderArtistImpactChart() {
         .enter()
         .append("text")
         .attr("class", "artist-name-label")
+        .attr("data-artist", d => d.artist)
         .attr("x", margin.left - 10)
         .attr("y", d => yScale(d.artist) + yScale.bandwidth() / 2)
         .attr("text-anchor", "end")
@@ -822,11 +832,19 @@ function renderArtistImpactChart() {
             // Scroll to the artist delta chart
             document.getElementById("artist-delta-chart").scrollIntoView({ behavior: "smooth", block: "nearest" });
         })
-        .on("mouseover", function () {
+        .on("mouseover", function (_, d) {
+            // Highlight both name and bar
             d3.select(this).style("text-decoration", "underline");
+            svg.selectAll(".impact-bar")
+                .filter(barData => barData.artist === d.artist)
+                .attr("opacity", 1);
         })
-        .on("mouseout", function () {
+        .on("mouseout", function (_, d) {
+            // Remove highlight from both name and bar
             d3.select(this).style("text-decoration", "none");
+            svg.selectAll(".impact-bar")
+                .filter(barData => barData.artist === d.artist)
+                .attr("opacity", 0.85);
         });
 
     // Stream count labels (inside bars)
@@ -1110,9 +1128,13 @@ function renderArtistDeltaChart(artistName) {
             .style("align-items", "center")
             .style("gap", "10px");
 
-        // Song title and date
+        // Song title, date, and streams
+        const streams = song.streams >= 1e9
+            ? `${(song.streams / 1e9).toFixed(2)}B`
+            : `${(song.streams / 1e6).toFixed(0)}M`;
+
         li.append("span")
-            .html(`<strong style="color: #f5f5f7">${song.track}</strong> - Released: ${month} ${day}, 2023`);
+            .html(`<strong style="color: #f5f5f7">${song.track}</strong> - Released: ${month} ${day}, 2023 - <span style="color: #1DB954; font-weight: 600">${streams} streams</span>`);
 
         // Container for links
         const linksContainer = li.append("span")
