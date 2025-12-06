@@ -34,6 +34,7 @@ async function loadData() {
     const dataset = await d3.csv("./data/spotify-2023.csv", d => ({
         track: d["track_name"],
         artist: d["artist(s)_name"],
+        released_year: +d["released_year"],
         released_month: +d["released_month"],
         released_day: +d["released_day"],
         streams: +d["streams"],
@@ -1075,8 +1076,12 @@ function renderArtistDeltaChart(artistName) {
         .text("Value > 0 means higher than 2023 average; value < 0 means lower.");
 
     // Add song releases section below the delta chart
-    // Sort songs by release date (month and day)
+    // Sort songs by release date (year, month, day)
     const sortedSongs = artistSongs.slice().sort((a, b) => {
+        const aYear = a.released_year || 0;
+        const bYear = b.released_year || 0;
+        if (aYear !== bYear) return aYear - bYear;
+
         const aMonth = a.released_month || 0;
         const bMonth = b.released_month || 0;
         if (aMonth !== bMonth) return aMonth - bMonth;
@@ -1097,13 +1102,13 @@ function renderArtistDeltaChart(artistName) {
         .style("max-height", "400px")
         .style("overflow-y", "auto");
 
-    // Add title for song releases inside the container
+    // Add title for songs popular in 2023
     songList.append("h4")
         .style("color", "#f5f5f7")
         .style("margin-top", "0")
         .style("margin-bottom", "15px")
         .style("font-size", "18px")
-        .text(`${artistSongs.length} song releases in 2023`);
+        .text(`${artistName} had ${artistSongs.length} songs that were popular in 2023`);
 
     // Add each song as a list item
     const ul = songList.append("ul")
@@ -1111,9 +1116,11 @@ function renderArtistDeltaChart(artistName) {
         .style("padding-left", "20px");
 
     sortedSongs.forEach(song => {
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const month = song.released_month ? monthNames[song.released_month - 1] : "?";
-        const day = song.released_day || "?";
+        // Format release date as mm/dd/yyyy
+        const month = song.released_month ? String(song.released_month).padStart(2, '0') : '??';
+        const day = song.released_day ? String(song.released_day).padStart(2, '0') : '??';
+        const year = song.released_year || '????';
+        const releaseDate = `${month}/${day}/${year}`;
 
         // Create search queries for each platform
         const searchQuery = encodeURIComponent(`${song.track} ${artistName}`);
@@ -1128,13 +1135,13 @@ function renderArtistDeltaChart(artistName) {
             .style("align-items", "center")
             .style("gap", "10px");
 
-        // Song title, date, and streams
+        // Song title, release date, and streams
         const streams = song.streams >= 1e9
             ? `${(song.streams / 1e9).toFixed(2)}B`
             : `${(song.streams / 1e6).toFixed(0)}M`;
 
         li.append("span")
-            .html(`<strong style="color: #f5f5f7">${song.track}</strong> - Released: ${month} ${day}, 2023 - <span style="color: #1DB954; font-weight: 600">${streams} streams</span>`);
+            .html(`<strong style="color: #f5f5f7">${song.track}</strong> - Released: ${releaseDate} - <span style="color: #1DB954; font-weight: 600">${streams} streams</span>`);
 
         // Container for links
         const linksContainer = li.append("span")
