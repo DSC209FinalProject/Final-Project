@@ -35,6 +35,7 @@ async function loadData() {
         track: d["track_name"],
         artist: d["artist(s)_name"],
         released_month: +d["released_month"],
+        released_day: +d["released_day"],
         streams: +d["streams"],
         in_spotify_playlists: +d["in_spotify_playlists"],
         danceability: +d["danceability_%"],
@@ -124,7 +125,7 @@ function renderGraph(data) {
         //back hover interaction
         .on("mouseover", function (event, d) {
             const isSelected = compareMode
-                ? selectedMonths.includes(d.data.month  )
+                ? selectedMonths.includes(d.data.month)
                 : currentSelectedMonth === d.data.month;
 
             if (!isSelected) {
@@ -243,7 +244,7 @@ function handleMonthClick(month, sliceElement) {
 }
 
 function updateComparisonPieSlices() {
-    pieSlices.each(function(d) {
+    pieSlices.each(function (d) {
         const slice = d3.select(this);
         const sliceData = slice.data()[0];
 
@@ -688,6 +689,205 @@ function renderLineGraph() {
     });
 }
 
+/* ==================== ARTIST IMPACT HELPERS ==================== */
+
+// Compute top artists by total streams and render a bar chart showing streaming dominance.
+function renderArtistImpactChart() {
+    const container = d3.select("#artist-impact-chart");
+    container.selectAll("*").remove();
+
+    // Split artist names and attribute streams to each individual artist
+    const individualArtistStreams = new Map();
+
+    allSongs.forEach(song => {
+        // Split by common delimiters: comma, ampersand, "feat.", "ft.", "featuring"
+        const artists = song.artist
+            .split(/,|&|\sfeat\.?\s|\sft\.?\s|\sfeaturing\s/i)
+            .map(a => a.trim())
+            .filter(a => a.length > 0);
+
+        // Attribute full streams to each artist in the collaboration
+        artists.forEach(artist => {
+            if (!individualArtistStreams.has(artist)) {
+                individualArtistStreams.set(artist, {
+                    totalStreams: 0,
+                    songCount: 0
+                });
+            }
+            const data = individualArtistStreams.get(artist);
+            data.totalStreams += song.streams;
+            data.songCount += 1;
+        });
+    });
+
+    // Convert to array and sort by total streams descending
+    let artistData = Array.from(individualArtistStreams, ([artist, data]) => ({
+        artist,
+        totalStreams: data.totalStreams,
+        songCount: data.songCount
+    })).sort((a, b) => d3.descending(a.totalStreams, b.totalStreams));
+
+    // Take top 30 artists
+    const topN = 30;
+    artistData = artistData.slice(0, topN);
+
+    // Calculate total streams across ALL songs for percentage calculation
+    const grandTotalStreams = d3.sum(allSongs, s => s.streams);
+
+    // Add percentage share to each artist
+    artistData.forEach(d => {
+        d.sharePercent = (d.totalStreams / grandTotalStreams) * 100;
+    });
+
+    const width = 1000;
+    const height = 1000;
+    const margin = { top: 40, right: 150, bottom: 60, left: 200 };
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("max-width", "1000px");
+
+    // Create scales
+    const xScale = d3.scaleLinear()
+        .domain([0, d3.max(artistData, d => d.totalStreams)])
+        .range([margin.left, width - margin.right]);
+
+    const yScale = d3.scaleBand()
+        .domain(artistData.map(d => d.artist))
+        .range([margin.top, height - margin.bottom])
+        .padding(0.2);
+
+    // Color scale for visual appeal
+    const colorScale = d3.scaleSequential()
+        .domain([topN - 1, 0])
+        .interpolator(d3.interpolateViridis);
+
+    // Draw bars
+    svg.selectAll(".impact-bar")
+        .data(artistData)
+        .enter()
+        .append("rect")
+        .attr("class", "impact-bar")
+        .attr("x", margin.left)
+        .attr("y", d => yScale(d.artist))
+        .attr("width", d => xScale(d.totalStreams) - margin.left)
+        .attr("height", yScale.bandwidth())
+        .attr("fill", (d, i) => colorScale(i))
+        .attr("opacity", 0.85)
+        .style("cursor", "pointer")
+        .on("click", (event, d) => {
+            renderArtistDeltaChart(d.artist);
+            // Scroll to the artist delta chart
+            document.getElementById("artist-delta-chart").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        })
+        .on("mouseover", function () {
+            d3.select(this).attr("opacity", 1);
+        })
+        .on("mouseout", function () {
+            d3.select(this).attr("opacity", 0.85);
+        });
+
+    // Add ranking numbers
+    svg.selectAll(".rank-label")
+        .data(artistData)
+        .enter()
+        .append("text")
+        .attr("class", "rank-label")
+        .attr("x", margin.left - 140)
+        .attr("y", d => yScale(d.artist) + yScale.bandwidth() / 2)
+        .attr("text-anchor", "end")
+        .attr("dominant-baseline", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "16px")
+        .style("font-weight", "700")
+        .text((d, i) => `#${i + 1}`);
+
+    // Artist name labels
+    svg.selectAll(".artist-name-label")
+        .data(artistData)
+        .enter()
+        .append("text")
+        .attr("class", "artist-name-label")
+        .attr("x", margin.left - 10)
+        .attr("y", d => yScale(d.artist) + yScale.bandwidth() / 2)
+        .attr("text-anchor", "end")
+        .attr("dominant-baseline", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "12px")
+        .style("cursor", "pointer")
+        .text(d => d.artist.length > 25 ? d.artist.substring(0, 25) + "..." : d.artist)
+        .on("click", (event, d) => {
+            renderArtistDeltaChart(d.artist);
+            // Scroll to the artist delta chart
+            document.getElementById("artist-delta-chart").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        })
+        .on("mouseover", function () {
+            d3.select(this).style("text-decoration", "underline");
+        })
+        .on("mouseout", function () {
+            d3.select(this).style("text-decoration", "none");
+        });
+
+    // Stream count labels (inside bars)
+    svg.selectAll(".stream-label")
+        .data(artistData)
+        .enter()
+        .append("text")
+        .attr("class", "stream-label")
+        .attr("x", d => xScale(d.totalStreams) + 5)
+        .attr("y", d => yScale(d.artist) + yScale.bandwidth() / 2)
+        .attr("dominant-baseline", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "11px")
+        .style("font-weight", "600")
+        .text(d => {
+            const billions = d.totalStreams / 1e9;
+            const millions = d.totalStreams / 1e6;
+            if (billions >= 1) {
+                return `${billions.toFixed(2)}B (${d.sharePercent.toFixed(1)}%)`;
+            } else {
+                return `${millions.toFixed(0)}M (${d.sharePercent.toFixed(1)}%)`;
+            }
+        });
+
+    // X-axis
+    const xAxis = d3.axisBottom(xScale)
+        .ticks(5)
+        .tickFormat(d => {
+            if (d >= 1e9) return `${(d / 1e9).toFixed(1)}B`;
+            if (d >= 1e6) return `${(d / 1e6).toFixed(0)}M`;
+            return d;
+        });
+
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0, ${height - margin.bottom})`)
+        .call(xAxis)
+        .selectAll("text")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "12px");
+
+    // X-axis label
+    svg.append("text")
+        .attr("x", (margin.left + width - margin.right) / 2)
+        .attr("y", height - 15)
+        .attr("text-anchor", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "14px")
+        .text("Total Streams");
+
+    // Title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", 20)
+        .attr("text-anchor", "middle")
+        .style("fill", "#f5f5f7")
+        .style("font-size", "16px")
+        .style("font-weight", "600")
+        .text(`Top ${topN} Most Streamed Artists in 2023`);
+}
+
 /* ==================== ARTIST INSIGHTS HELPERS ==================== */
 
 // Build the artist dropdown from the dataset (use top artists by song count).
@@ -730,14 +930,27 @@ function renderArtistDeltaChart(artistName) {
     container.selectAll("*").remove();
 
     if (!artistName) {
+        // Add title
+        container.append("h3")
+            .style("color", "#f5f5f7")
+            .style("margin-top", "40px")
+            .style("margin-bottom", "10px")
+            .text("Artist Insights");
+
         // If no artist selected, show a small message.
         container.append("p")
             .style("color", "#d0d0d5")
-            .text("Select an artist above to see how their sound differs from the 2023 average.");
+            .text("Click on an artist above to see how their sound differs from the 2023 average.");
         return;
     }
 
-    const artistSongs = allSongs.filter(d => d.artist === artistName);
+    // Filter songs where the artist appears (including collaborations)
+    const artistSongs = allSongs.filter(d => {
+        const artists = d.artist
+            .split(/,|&|\sfeat\.?\s|\sft\.?\s|\sfeaturing\s/i)
+            .map(a => a.trim());
+        return artists.includes(artistName);
+    });
 
     if (artistSongs.length === 0) {
         container.append("p")
@@ -745,6 +958,21 @@ function renderArtistDeltaChart(artistName) {
             .text("No songs found for this artist in the dataset.");
         return;
     }
+
+    // Add title section
+    container.append("h3")
+        .style("color", "#f5f5f7")
+        .style("margin-top", "40px")
+        .style("margin-bottom", "10px")
+        .text("Artist Insights");
+
+    // Add artist name
+    container.append("h4")
+        .style("color", "#f5f5f7")
+        .style("margin-top", "10px")
+        .style("margin-bottom", "20px")
+        .style("font-size", "20px")
+        .text(artistName);
 
     // Compute average audio features for the chosen artist.
     const artistStats = computeStats(artistSongs);
@@ -761,8 +989,8 @@ function renderArtistDeltaChart(artistName) {
     });
 
     const width = 900;
-    const height = 40 * FEATURES.length + 80;
-    const margin = { top: 20, right: 80, bottom: 30, left: 180 };
+    const height = 40 * FEATURES.length + 100;
+    const margin = { top: 20, right: 80, bottom: 50, left: 180 };
 
     const svg = container.append("svg")
         .attr("viewBox", `0 0 ${width} ${height}`)
@@ -819,14 +1047,118 @@ function renderArtistDeltaChart(artistName) {
         .style("fill", "#f5f5f7")
         .style("font-size", "11px");
 
-    // Small text label below the chart.
+    // Explanation text
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", height - 5)
         .attr("text-anchor", "middle")
         .style("fill", "#f5f5f7")
         .style("font-size", "12px")
-        .text(`${artistName}: value > 0 means higher than 2023 average; value < 0 means lower.`);
+        .text("Value > 0 means higher than 2023 average; value < 0 means lower.");
+
+    // Add song releases section below the delta chart
+    // Sort songs by release date (month and day)
+    const sortedSongs = artistSongs.slice().sort((a, b) => {
+        const aMonth = a.released_month || 0;
+        const bMonth = b.released_month || 0;
+        if (aMonth !== bMonth) return aMonth - bMonth;
+
+        const aDay = a.released_day || 0;
+        const bDay = b.released_day || 0;
+        return aDay - bDay;
+    });
+
+    // Create song list container
+    const songList = container.append("div")
+        .style("color", "#d0d0d5")
+        .style("margin-top", "40px")
+        .style("margin-bottom", "20px")
+        .style("padding", "15px")
+        .style("background-color", "rgba(255, 255, 255, 0.05)")
+        .style("border-radius", "5px")
+        .style("max-height", "400px")
+        .style("overflow-y", "auto");
+
+    // Add title for song releases inside the container
+    songList.append("h4")
+        .style("color", "#f5f5f7")
+        .style("margin-top", "0")
+        .style("margin-bottom", "15px")
+        .style("font-size", "18px")
+        .text(`${artistSongs.length} song releases in 2023`);
+
+    // Add each song as a list item
+    const ul = songList.append("ul")
+        .style("margin", "0")
+        .style("padding-left", "20px");
+
+    sortedSongs.forEach(song => {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = song.released_month ? monthNames[song.released_month - 1] : "?";
+        const day = song.released_day || "?";
+
+        // Create search queries for each platform
+        const searchQuery = encodeURIComponent(`${song.track} ${artistName}`);
+        const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+        const spotifyUrl = `https://open.spotify.com/search/${searchQuery}`;
+        const appleMusicUrl = `https://music.apple.com/search?term=${searchQuery}`;
+
+        const li = ul.append("li")
+            .style("margin-bottom", "10px")
+            .style("color", "#d0d0d5")
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("gap", "10px");
+
+        // Song title and date
+        li.append("span")
+            .html(`<strong style="color: #f5f5f7">${song.track}</strong> - Released: ${month} ${day}, 2023`);
+
+        // Container for links
+        const linksContainer = li.append("span")
+            .style("display", "flex")
+            .style("gap", "8px")
+            .style("margin-left", "auto");
+
+        // YouTube link
+        linksContainer.append("a")
+            .attr("href", youtubeUrl)
+            .attr("target", "_blank")
+            .attr("rel", "noopener noreferrer")
+            .attr("title", "Listen on YouTube")
+            .style("display", "inline-block")
+            .style("width", "20px")
+            .style("height", "20px")
+            .html(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF0000" width="20" height="20">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>`);
+
+        // Spotify link
+        linksContainer.append("a")
+            .attr("href", spotifyUrl)
+            .attr("target", "_blank")
+            .attr("rel", "noopener noreferrer")
+            .attr("title", "Listen on Spotify")
+            .style("display", "inline-block")
+            .style("width", "20px")
+            .style("height", "20px")
+            .html(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1DB954" width="20" height="20">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>`);
+
+        // Apple Music link
+        linksContainer.append("a")
+            .attr("href", appleMusicUrl)
+            .attr("target", "_blank")
+            .attr("rel", "noopener noreferrer")
+            .attr("title", "Listen on Apple Music")
+            .style("display", "inline-block")
+            .style("width", "20px")
+            .style("height", "20px")
+            .html(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FA57C1" width="20" height="20">
+                <path d="M23.997 6.124c0-.738-.065-1.47-.24-2.19-.317-1.31-1.062-2.31-2.18-3.043C21.003.517 20.373.285 19.7.164c-.517-.093-1.038-.135-1.564-.15-.04-.003-.083-.01-.124-.013H5.988c-.152.01-.303.017-.455.026C4.786.07 4.043.15 3.34.428 2.004.958 1.04 1.88.475 3.208c-.192.448-.292.925-.363 1.408-.056.392-.088.785-.1 1.18 0 .032-.007.062-.01.093v12.223c.01.14.017.283.027.424.05.815.154 1.624.497 2.373.65 1.42 1.738 2.353 3.234 2.801.42.127.856.187 1.293.228.555.053 1.11.06 1.667.06h11.03c.525 0 1.048-.034 1.57-.1.823-.106 1.597-.35 2.296-.81a5.044 5.044 0 0 0 1.88-2.207c.186-.42.293-.87.37-1.324.113-.675.138-1.358.137-2.04-.002-3.8 0-7.595-.003-11.393zm-6.423 3.99v5.712c0 .417-.058.827-.244 1.206-.29.59-.76 1.023-1.364 1.268-.83.337-1.657.323-2.468-.05-.57-.262-1.017-.667-1.302-1.254-.254-.524-.286-1.08-.168-1.65.18-.852.695-1.462 1.448-1.863.523-.278 1.09-.42 1.67-.524.414-.075.826-.143 1.24-.21.155-.025.285-.11.392-.235.186-.215.25-.46.232-.72-.014-.198-.008-.397-.008-.595v-4.49c0-.016-.002-.032-.005-.048-.022-.15-.124-.25-.28-.258-.062-.003-.123.005-.185.013l-4.328.777c-.12.022-.235.05-.354.076-.088.02-.15.075-.196.157-.022.04-.033.09-.033.136v7.368c0 .4-.065.79-.243 1.16-.29.605-.763 1.04-1.372 1.295-.828.346-1.656.34-2.47-.038-.57-.267-1.01-.68-1.293-1.267-.248-.516-.286-1.064-.173-1.626.18-.857.696-1.47 1.457-1.87.525-.276 1.087-.415 1.67-.516.41-.07.817-.14 1.225-.207.11-.02.204-.06.29-.13.254-.208.332-.5.288-.794-.017-.117-.012-.235-.012-.353V5.443c0-.057.003-.113.01-.17.013-.103.068-.18.167-.225.054-.024.118-.036.178-.048l5.19-.933c.403-.073.807-.145 1.21-.22.047-.008.096-.013.144-.02.27-.027.444.115.47.382.01.097.013.194.013.29v5.66z"/>
+            </svg>`);
+    });
 }
 
 
@@ -844,8 +1176,10 @@ renderLineGraph();
 // Compute global average feature stats once for the artist section.
 globalFeatureStats = computeStats(allSongs);
 
-// Build artist dropdown and show default message in the artist chart area.
-buildArtistDropdown();
+// Render the Artist Impact chart showing streaming dominance.
+renderArtistImpactChart();
+
+// Show default message in the artist chart area.
 renderArtistDeltaChart("");
 
 // Toggle between compare-mode and single-mode

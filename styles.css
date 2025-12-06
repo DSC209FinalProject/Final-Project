@@ -37,7 +37,8 @@ h2 {
     margin-top: 20px;
 }
 
-.leftcolumn, .rightcolumn {
+.leftcolumn,
+.rightcolumn {
     width: 45%;
 }
 
@@ -126,9 +127,9 @@ ul {
 /* ------------------ GRAPH CONTAINERS ------------------ */
 
 #chart,
-#radar-chart{
+#radar-chart {
     width: 100%;
-    max-width: 500px;      
+    max-width: 500px;
     height: auto;
     margin-top: -40px;
     display: inline-block;
@@ -187,7 +188,7 @@ ul {
 }
 
 /* ------------------ LINE CHART ------------------ */
-#linegraph{
+#linegraph {
     margin-top: 20px;
 }
 
