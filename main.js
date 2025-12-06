@@ -124,7 +124,7 @@ function renderGraph(data) {
         //back hover interaction
         .on("mouseover", function (event, d) {
             const isSelected = compareMode
-                ? selectedMonths.includes(d.data.month)
+                ? selectedMonths.includes(d.data.month  )
                 : currentSelectedMonth === d.data.month;
 
             if (!isSelected) {
