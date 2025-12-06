@@ -950,11 +950,17 @@ function renderArtistDeltaChart(artistName) {
 
     if (!artistName) {
         // Add title
-        container.append("h3")
+        container.append("h2")
+            .attr("class", "section-header graphtitle")
             .style("color", "#f5f5f7")
-            .style("margin-top", "40px")
             .style("margin-bottom", "10px")
             .text("Artist Insights");
+
+        // Add description
+        container.append("p")
+            .style("color", "#d0d0d5")
+            .style("margin-bottom", "20px")
+            .text("Compare an artist's average audio features against the 2023 overall average.");
 
         // If no artist selected, show a small message.
         container.append("p")
@@ -979,11 +985,17 @@ function renderArtistDeltaChart(artistName) {
     }
 
     // Add title section
-    container.append("h3")
+    container.append("h2")
+        .attr("class", "section-header graphtitle")
         .style("color", "#f5f5f7")
-        .style("margin-top", "40px")
         .style("margin-bottom", "10px")
         .text("Artist Insights");
+
+    // Add description
+    container.append("p")
+        .style("color", "#d0d0d5")
+        .style("margin-bottom", "20px")
+        .text("Compare an artist's average audio features against the 2023 overall average.");
 
     // Add artist name
     container.append("h4")

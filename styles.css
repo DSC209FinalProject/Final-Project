@@ -21,6 +21,11 @@ h2 {
     margin-top: 20px;
 }
 
+.section-header {
+    font-size: 2.5em;
+    font-weight: 700;
+}
+
 .graphtitle {
     margin-top: 100px;
 }
