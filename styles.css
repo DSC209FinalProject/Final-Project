@@ -1,274 +1,388 @@
-/* ------------------ GLOBAL STYLING ------------------ */
+    .header-box {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-body {
-    font: 100%/1.5 Roboto;
-    max-width: 140ch;
-    text-align: center;
-    margin-inline: max(1em, (100% - 140ch) / 2);
-    background-color: #1C1C1E;
-    color: #f5f5f7;
-}
+    .header-box h1 {
+        color: rgb(117, 117, 242);
+        margin-top: 0px;
+    }
 
-h1 {
-    font-size: 2em;
-    text-align: center;
-    margin-top: 40px;
-    margin-bottom: 10px;
-}
+    .header-box h3 {
+        font-weight: 400;
+        font-size: 22px;
+    }
 
-h2 {
-    font-size: 1.5em;
-    margin-top: 20px;
-}
+    .header-box hr {
+        border: none;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 30px 0;
+    }
 
-.section-header {
-    font-size: 2.5em;
-    font-weight: 700;
-}
+    .pie-box {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-.graphtitle {
-    margin-top: 100px;
-}
+    .pie-box h2 {
+        margin-top: 0px;
+        text-align: center;
+        color: rgb(117, 117, 242);
+    }
 
-.reflection {
-    margin-top: 200px;
-}
+    .pie-box p {
+        text-align: center;
+        margin-bottom: 40px;
+        margin-left: 100px;
+        margin-right: 100px;
+        font-size: 18px;
 
-/* ------------------ TEAM / INTRO LAYOUT ------------------ */
+    }
 
-.bodycolumns {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
+    .pie-box-2 {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-.leftcolumn,
-.rightcolumn {
-    width: 45%;
-}
+    .pie-box-2 h2 {
+        margin-top: 0px;
+        text-align: center;
+        color: rgb(117, 117, 242);
+    }
 
-ul {
-    list-style-type: none;
-    padding-left: 0;
-}
+    .pie-box-2 p {
+        text-align: center;
+        margin-bottom: 40px;
+        margin-left: 100px;
+        margin-right: 100px;
+        font-size: 18px;
 
-/* ------------------ DASHBOARD LAYOUT ------------------ */
+    }
 
-.dashboard {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3rem;
-    margin-top: 2.5rem;
-    width: 100%;
-}
+    /* ------------------ GLOBAL STYLING ------------------ */
 
-.chart-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 6rem;
-    width: 100%;
-    margin-top: 2rem;
-}
+    body {
+        font: 100%/1.5 Roboto;
+        max-width: 140ch;
+        text-align: center;
+        margin-inline: max(1em, (100% - 140ch) / 2);
+        background-color: #1C1C1E;
+        color: #f5f5f7;
+    }
 
-/* ------------------ SUMMARY PANEL ------------------ */
+    h1 {
+        font-size: 2em;
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 10px;
+    }
 
-#month-summary {
-    background-color: #2A2A2C;
-    border-radius: 14px;
-    padding: 2rem 3rem;
-    text-align: center;
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
-    min-height: 160px;
-    width: 80%;
-    margin: 0 auto;
-    transition: opacity 0.3s ease;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+    h2 {
+        font-size: 1.5em;
+        margin-top: 20px;
+    }
 
-#month-summary h3 {
-    margin-top: 0;
-    margin-bottom: 0.8rem;
-    font-size: 1.8rem;
-}
+    .section-header {
+        font-size: 2.5em;
+        font-weight: 700;
+    }
 
-/* Compare mode: side-by-side summaries */
-#month-summary.compare-mode {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    align-items: stretch;
-    padding: 0;
-    background-color: transparent;
-    box-shadow: none;
-}
+    .graphtitle {
+        margin-top: 100px;
+    }
 
-#month-summary.single-month {
-    display: block;
-}
+    .reflection {
+        margin-top: 200px;
+    }
 
-.month-summary-card {
-    background-color: #2A2A2C;
-    border-radius: 14px;
-    padding: 2rem 3rem;
-    text-align: center;
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
-    flex: 1;
-    max-width: 400px;
-    font-size: 1.1rem;
-}
+    /* ------------------ TEAM / INTRO LAYOUT ------------------ */
 
-.month-summary-card h3 {
-    margin-top: 0;
-    margin-bottom: 0.8rem;
-    font-size: 1.8rem;
-}
+    .bodycolumns {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
 
-/* ------------------ GRAPH CONTAINERS ------------------ */
+    .leftcolumn,
+    .rightcolumn {
+        text-align: left;
+        width: 45%;
+    }
 
-#chart,
-#radar-chart {
-    width: 100%;
-    max-width: 500px;
-    height: auto;
-    margin-top: -40px;
-    display: inline-block;
-}
+    .leftcolumn h2,
+    .rightcolumn h2 {
+        color: rgb(117, 117, 242);
+    }
 
-/* ------------------ RADAR STYLING ------------------ */
+    .leftcolumn p,
+    .rightcolumn p {
+        font-size: 18px;
+    }
 
-.radar-grid {
-    fill: none;
-    stroke: #3A3A3C;
-    stroke-width: 0.5px;
-}
+    ul {
+        list-style-type: none;
+        padding-left: 0;
+        font-size: 18px;
+    }
 
-.radar-axis-label {
-    fill: #f5f5f7;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
+    /* ------------------ DASHBOARD LAYOUT ------------------ */
 
-.radar-month {
-    fill: rgba(79, 140, 255, 0.4);
-    stroke: #b3c6ff;
-    stroke-width: 2px;
-}
+    .dashboard {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3rem;
+        margin-top: 2.5rem;
+        width: 100%;
+    }
 
-/* ------------------ PIE SLICE HOVER ------------------ */
+    .chart-row {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 6rem;
+        width: 100%;
+        margin-top: 2rem;
+    }
 
-.slice {
-    cursor: pointer;
-    opacity: 0.85;
-    transition: opacity 0.2s ease;
-}
+    /* ------------------ SUMMARY PANEL ------------------ */
 
-.slice:hover {
-    opacity: 1;
-}
+    #month-summary {
+        background-color: #2A2A2C;
+        border-radius: 14px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        text-align: center;
+        box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
+        min-height: 180px;
+        width: 100%;
+        margin: 0 auto;
+        transition: opacity 0.3s ease;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.slice.selected {
-    stroke: #ffffff;
-    stroke-width: 3px;
-    opacity: 1;
-}
+    #month-summary h3 {
+        margin-top: 0;
+        margin-bottom: 0.8rem;
+        font-size: 1.8rem;
+    }
 
-/* ------------------ COMPARE MODE ------------------ */
+    /* Compare mode: side-by-side summaries */
+    #month-summary.compare-mode {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        align-items: stretch;
+        padding: 0;
+        background-color: transparent;
+        box-shadow: none;
+    }
 
-.compare-controls {
-    margin-top: 20px;
-    font-size: 1.2rem;
-    color: white;
-}
+    #month-summary.single-month {
+        display: block;
+    }
 
-#compare-status {
-    margin-top: 6px;
-    color: #9ecfff;
-    font-size: 0.95rem;
-}
+    .month-summary-card {
+        background-color: #2A2A2C;
+        border-radius: 14px;
+        padding: 2rem 3rem;
+        text-align: center;
+        box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
+        flex: 1;
+        max-width: 400px;
+        font-size: 1.1rem;
+    }
 
-/* ------------------ LINE CHART ------------------ */
-#linegraph {
-    margin-top: 20px;
-}
+    .month-summary-card h3 {
+        margin-top: 0;
+        margin-bottom: 0.8rem;
+        font-size: 1.8rem;
+    }
 
-.gridlines line {
-    stroke-width: 0.2px;
-}
+    /* ------------------ GRAPH CONTAINERS ------------------ */
 
-/* ------------------ FEATURE FILTER PANEL ------------------ */
-/* Small panel of checkboxes that lets the user choose which features
+    #chart,
+    #radar-chart {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+        margin-top: -40px;
+        display: inline-block;
+    }
+
+    /* ------------------ RADAR STYLING ------------------ */
+
+    .radar-grid {
+        fill: none;
+        stroke: #3A3A3C;
+        stroke-width: 0.5px;
+    }
+
+    .radar-axis-label {
+        fill: #f5f5f7;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .radar-month {
+        fill: rgba(79, 140, 255, 0.4);
+        stroke: #b3c6ff;
+        stroke-width: 2px;
+    }
+
+    /* ------------------ PIE SLICE HOVER ------------------ */
+
+    .slice {
+        cursor: pointer;
+        opacity: 0.85;
+        transition: opacity 0.2s ease;
+    }
+
+    .slice:hover {
+        opacity: 1;
+    }
+
+    .slice.selected {
+        stroke: #ffffff;
+        stroke-width: 3px;
+        opacity: 1;
+    }
+
+    /* ------------------ LINE CHART ------------------ */
+    #linegraph {
+        margin-top: 20px;
+    }
+
+    .gridlines line {
+        stroke-width: 0.2px;
+    }
+
+    /* ------------------ FEATURE FILTER PANEL ------------------ */
+    /* Small panel of checkboxes that lets the user choose which features
    appear in the Monthly Comparison line graph. */
 
-.feature-panel {
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-}
+    .feature-panel {
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
 
-.feature-panel-title {
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-    color: #d0d0d5;
-}
+    .feature-panel-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        color: #d0d0d5;
+    }
 
-#feature-checkboxes {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.6rem 1rem;
-}
+    #feature-checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.6rem 1rem;
+    }
 
-.feature-option {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.9rem;
-    cursor: pointer;
-    user-select: none;
-}
+    .feature-option {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+    }
 
-.feature-option input {
-    margin-right: 0.35rem;
-}
+    .feature-option input {
+        margin-right: 0.35rem;
+    }
 
-.feature-option span {
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    border-bottom-width: 2px;
-    border-bottom-style: solid;
-}
+    .feature-option span {
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
+        border-bottom-width: 2px;
+        border-bottom-style: solid;
+    }
 
-/* Artist Inisghts Section  */
-/* Styles for the artist dropdown + delta bar chart under the pie/radar. */
+    /* Artist Inisghts Section  */
+    /* Styles for the artist dropdown + delta bar chart under the pie/radar. */
 
-.artist-title {
-    margin-top: 60px;
-}
+    .artist-title {
+        margin-top: 60px;
+    }
 
-.artist-subtitle {
-    font-size: 0.95rem;
-    color: #d0d0d5;
-    margin-bottom: 0.75rem;
-}
+    .artist-subtitle {
+        font-size: 0.95rem;
+        color: #d0d0d5;
+        margin-bottom: 0.75rem;
+    }
 
-#artist-controls {
-    margin-bottom: 1rem;
-}
+    #artist-controls {
+        margin-bottom: 1rem;
+    }
 
-#artist-select {
-    margin-left: 0.5rem;
-    padding: 0.3rem 0.7rem;
-    border-radius: 6px;
-    border: 1px solid #444;
-    background-color: #2A2A2C;
-    color: #f5f5f7;
-}
+    #artist-select {
+        margin-left: 0.5rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background-color: #2A2A2C;
+        color: #f5f5f7;
+    }
 
-#artist-delta-chart {
-    margin-top: 10px;
-    margin-bottom: 40px;
-}
+    #artist-delta-chart {
+        margin-top: 10px;
+        margin-bottom: 40px;
+    }
+
+    .compare-controls {
+        display: block;
+        text-align: center;
+        margin-top: 60px;
+        font-size: 16px;
+    }
+
+    .compare-controls label {
+        gap: 10px;
+        padding: 13px 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        min-width: 180px;
+    }
+
+    .compare-controls label:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .compare-controls label,
+    .compare-controls button {
+        display: inline-block;
+        margin: 10px 15px;
+    }
+
+    button {
+        padding: 16px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background: rgb(117, 117, 242);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-weight: 600;
+
+    }
+
+    button:hover {
+        box-shadow: 0 0 12px rgba(117, 117, 242, 0.8);
+    }

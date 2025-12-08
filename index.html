@@ -8,104 +8,107 @@
 </head>
 
 <body>
-  <h1>
-    The Impact of Top-Streamed Artists <br />
-    <h3>How Do Popular Songs Affect the Musical Trends in the Spotify Landscape?</h2>
-  </h1>
-  <hr />
 
-  <div class="bodycolumns">
-    <div class="leftcolumn">
-      <h2>Team Members</h2>
-      <ul class="team">
-        <li>Marco Curiel (m1curiel@ucsd.edu)</li>
-        <li>Franky Liu (frliu@ucsd.edu)</li>
-        <li>Boning Yang (boyang@ucsd.edu)</li>
-        <li>Alexis Jacques (a1jacques@ucsd.edu)</li>
-      </ul>
+  <div class="header-box">
+    <h1>
+      The Impact of Top-Streamed Artists <br />
+      <h3>How Do Popular Songs Affect the Musical Trends in the Spotify Landscape?</h3>
+    </h1>
+    <hr />
+    <div class="bodycolumns">
+      <div class="leftcolumn">
+        <h2>Team Members</h2>
+        <ul class="team">
+          <li>Marco Curiel (m1curiel@ucsd.edu)</li>
+          <li>Franky Liu (frliu@ucsd.edu)</li>
+          <li>Boning Yang (boyang@ucsd.edu)</li>
+          <li>Alexis Jacques (a1jacques@ucsd.edu)</li>
+        </ul>
+      </div>
+      <div class="rightcolumn">
+        <h2>Project Summary</h2>
+        <p>Have you ever wondered how much world famous artists such as The Weeknd actually affect the music industry
+          and
+          its trends? We noticed that this question is sparsely explored in existing visualizations on music, which
+          motivated us to create a more interconnected and comprehensive way of analyzing this topic. <br>
+          <br>We have divided up our
+          visualizations into 3 unique sections, all of which are interconnected and provide a piece of the story. We
+          recommend to view the sections in the order as they appear. However, feel free to explore in however many ways
+          you like! There is also a guide at the bottom of the page if you need a hint.
+        </p>
+      </div>
     </div>
+  </div>
 
-    <div class="rightcolumn">
-      <h2>Project Summary</h2>
-      <p>Have you ever wondered how much world famous artists such as The Weeknd actually affect the music industry and
-        its trends? We noticed that this question is sparsely explored in existing visualizations on music, which
-        motivated us to create a more interconnected and comprehensive way of analyzing this topic. <br>
+  <div class="pie-box">
+    <h2 class="graphtitle section-header">1. Seasonal Overview: When are Top Hits Released?</h2>
+    <p>Start your explorations here, discover the distribution of Spotify hit songs throughout 2023. Click on any month
+      to see detailed statistics and audio features. Click on "Select Months" to compare two month slices at a time,
+      select "Show Average" to compare the month slice to the 2023 average.</p>
 
-        <br>We have divided up our
-        visualizations into 3 unique sections, all of which are interconnected and provide a piece of the story. We have
-        a recommended exploration combination below, which presents the insight to our question when viewed in that
-        order. However, feel free to explore in however many ways you like!
+    <!-- Summary + Charts -->
+    <div id="month-summary">
+      <p style="color: #f5f5f7; margin: 0">
+        Click a slice to explore that month.
       </p>
     </div>
-  </div>
 
-  <h2 class="graphtitle section-header">Interactive Pie Chart</h2>
-  <p>Recommended Viewing Order: Pie Chart, Artist Insights, Monthly Comparison</p>
+    <div class="dashboard">
+      <div class="chart-row">
+        <div id="chart"></div>
+        <div id="radar-chart"></div>
+      </div>
 
-  <!-- Summary + Charts -->
-  <div id="month-summary">
-    <p style="color: #f5f5f7; margin: 0">
-      Click a slice to explore that month.
-    </p>
-  </div>
-
-  <div class="dashboard">
-    <div class="chart-row">
-      <div id="chart"></div>
-      <div id="radar-chart"></div>
     </div>
-    <div style="text-align: center; margin-top: 20px">
-      <button id="clear-selections-btn" style="
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4a4a4a;  
-            color: white;
-            border: none;
-            border-radius: 5px;
-          ">
-        Clear Selections
-      </button>
+
+    <!-- Compare Toggle -->
+    <div class="compare-controls">
+      <label>
+        <input type="checkbox" id="compare-toggle" />
+        Compare Months
+      </label>
+      <label>
+        <input type="checkbox" id="average-toggle" />
+        Show Average
+      </label>
+      <button id="clear-selections-btn">Clear Selections</button>
+      <p id="compare-status"></p>
     </div>
   </div>
 
-  <!-- Compare Toggle -->
-  <div class="compare-controls">
-    <label>
-      <input type="checkbox" id="compare-toggle" />
-      Compare Months
-    </label>
-    <p id="compare-status"></p>
-    <label style="margin-top: 10px; display: block">
-      <input type="checkbox" id="average-toggle" />
-      Show Average
-    </label>
+  <!-- Feature selection panel for the line graph -->
+  <div class="pie-box">
+    <h2 class="graphtitle section-header">2. Temporal Overview: How Did Audio Features Change Over Time in 2023?</h2>
+    <div class="feature-panel">
+      <p class="feature-panel-title">
+        This graph reveals how average audio features evolve throughout the year. Check or uncheck different audio
+        features to separate them out. It might be a good idea to reference this graph again after viewing Section 3!
+      </p>
+      <div id="feature-checkboxes"></div>
+    </div>
+    <div id="linegraph"></div>
   </div>
 
   <!-- Artist Impact Section -->
-  <h2 class="section-header graphtitle" style="color: #f5f5f7;">Artist Impact</h2>
-  <p style="color: #d0d0d5; margin-bottom: 20px;">
-    Top artists ranked by total streams, showing their share of the music industry. Click on an artist to see their
-    detailed insights.
-  </p>
-  <div id="artist-impact-chart"></div>
-
-  <!-- Container where the artist delta bar chart will be drawn -->
-  <div id="artist-delta-chart"></div>
-
-  <h2 class="section-header graphtitle">Monthly Comparison</h2>
-  <h3 id="graphtitle">Mean Percentage of Hit Song Styles Across 2023</h3>
-
-  <!-- Feature selection panel for the line graph -->
-  <div class="feature-panel">
-    <p class="feature-panel-title">
-      Choose which audio features to display in the monthly trend graph:
+  <div class="pie-box">
+    <h2 class="section-header graphtitle">3. Artist Impact: Do Top Artists Actually Dictate Trends?</h2>
+    <p style="color: #d0d0d5; margin-bottom: 20px;">
+      Top artists might dominate streaming numbers, but do they actually define the music landscape? Click on any artist
+      to
+      compare their preferred audio features against the 2023 average. By taking the artist's most preferred features
+      and comparing it to Section 2's temporal graph, could you tell if their music affected the music landscape?
     </p>
-    <div id="feature-checkboxes"></div>
+    <div id="artist-impact-chart"></div>
+    <div id="artist-delta-chart"></div>
   </div>
-
-  <div id="linegraph"></div>
-
+  <div class="pie-box-2">
+    <h2 class="section-header graphtitle">Need a Hint?</h2>
+    <p>Start with the pie chart, select a month you would like to explore. Note down the top performing artist of that
+      month, and find the artist in Section 3. Note down their top features and compare those features against Section
+      2's line graph. Did the respective audio feature shift in relation to the artist's feature? If it did or did not,
+      that should tell us a piece of the story on whether the top performing song affected the song trends of that
+      month.</p>
+  </div>
   <script src="main.js" type="module"></script>
 </body>
 
