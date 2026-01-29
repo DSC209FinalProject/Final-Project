@@ -7,7 +7,7 @@
     }
 
     .header-box h1 {
-        color: #1DB954;
+        color: #1ED760;
         margin-top: 0px;
     }
 
@@ -34,7 +34,7 @@
     .pie-box h2 {
         margin-top: 0px;
         text-align: center;
-        color: #1DB954;
+        color: #1ED760;
     }
 
     .pie-box p {
@@ -58,7 +58,7 @@
     .pie-box-2 h2 {
         margin-top: 0px;
         text-align: center;
-        color: #1DB954;
+        color: #1ED760;
     }
 
     .pie-box-2 p {
@@ -110,19 +110,19 @@
 
     .bodycolumns {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         margin-top: 20px;
     }
 
     .leftcolumn,
     .rightcolumn {
-        text-align: left;
-        width: 45%;
+        text-align: center;
+        width: 80%;
     }
 
     .leftcolumn h2,
     .rightcolumn h2 {
-        color: #1DB954;
+        color: #1ED760;
     }
 
     .leftcolumn p,
@@ -375,7 +375,7 @@
         padding: 16px 20px;
         font-size: 16px;
         cursor: pointer;
-        background: #1DB954;
+        background: #1ED760;
         color: white;
         border: none;
         border-radius: 25px;
